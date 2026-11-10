@@ -2,6 +2,7 @@
 // All user data stays in browser.storage.local. Nothing here touches the network.
 import { browser } from 'wxt/browser';
 import { KEYS } from './keys';
+import { repo } from './repo';
 import { DEFAULT_SETTINGS } from '../shared/types';
 import type { Settings, OwnedItem, SavedItem, Visit, Classification } from '../shared/types';
 
@@ -26,18 +27,18 @@ export function saveSettings(s: Settings): Promise<void> {
   return write(KEYS.settings, s);
 }
 
-// Owned items
+// Owned items: delegate to repo.ts so every write is validated and serialized.
 export function getOwned(): Promise<OwnedItem[]> {
-  return read<OwnedItem[]>(KEYS.owned, []);
+  return repo.getItems();
 }
 export async function addOwned(item: OwnedItem): Promise<void> {
-  const all = await getOwned();
-  all.push(item);
-  await write(KEYS.owned, all);
+  const all = await repo.getItems();
+  if (all.some((x) => x.id === item.id)) return; // never duplicate
+  await repo.setItems([...all, item]);
 }
 export async function deleteOwned(id: string): Promise<void> {
-  const all = await getOwned();
-  await write(KEYS.owned, all.filter((x) => x.id !== id));
+  const all = await repo.getItems();
+  await repo.setItems(all.filter((x) => x.id !== id));
 }
 
 // Saved (cooling-off) items. id is the productId, so one product is kept once.
