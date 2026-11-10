@@ -75,3 +75,6 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   changed. These automated results are not proof of native lifecycle/UI behavior.
 - Content-script consent enforcement and product observation/AI remain outside
   this task. No new permissions, tracking, network calls or unrelated screens.
+- After merging the teammate's Phase 3 shared-contract updates from main: reran
+  the complete suite (5 files, 59 tests passed), typecheck and production build;
+  all passed. Onboarding uses the merged active contracts without replacing them.
