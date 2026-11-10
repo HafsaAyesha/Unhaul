@@ -161,3 +161,11 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   a substitute for a real Chrome restart. No live order or AI request was made.
 - Decisions implemented; notifications, alarms, budgets and automatic purchase/owned
   item integration remain deferred. Time calculations use the device clock.
+
+### Concurrent main merge validation
+The incoming main branch contained committed unresolved source markers and alternate
+notification/budget/wardrobe contracts. Exact conflicting source/test versions are
+preserved in docs/merge-preservation; they are not active or claimed as passed.
+Incoming fixtures, helper script, icon, package command and standalone insights module
+were retained. After resolution, reran the active 97-test suite, typecheck and build;
+all passed. Incoming raw fixture whitespace was preserved rather than reformatted.

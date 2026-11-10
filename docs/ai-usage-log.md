@@ -67,3 +67,8 @@ absolute deadlines, panel duration/error/acknowledgement UI, and the options lis
 Added three compact storage cases and extended the existing synthetic UI harness.
 Checks and the native browser restriction are recorded in testing.md. No provider
 call, order, deployment or new dependency was introduced. User authorized the main push.
+
+Phase 8 push required merging concurrent main changes. Kept incoming fixtures/helper
+files, preserved exact incompatible draft sources in docs/merge-preservation, and
+retained the tested active consent/storage contracts without notification permissions.
+Revalidated the merged active code; no history rewrite or source archive loss.

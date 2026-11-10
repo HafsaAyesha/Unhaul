@@ -97,7 +97,7 @@ can retry. The background owns all analysis/cache operations and enforces consen
 
 See proxy/README.md for the server-side key, fixed model, exact origin/CDN allowlists,
 rate limiting and PROXY_URL build setup. No live AI/deployment/accuracy result is
-claimed. No real product fixtures have been added.
+claimed. Incoming store fixtures are retained, but they do not establish live Daraz integration.
 
 ## Reflection UI (Phase 7)
 After consent, recognized Daraz product pages show a small badge. Click it manually
@@ -124,7 +124,7 @@ select the repeat-visit prompt (prior visit 30 minutes–30 days old); this phas
 not add automatic visit recording. Unknown/unrecognized pages show no shopping UI.
 
 A synthetic ordinary-Chromium smoke check passed; this is not a live Daraz or native
-extension-installation check. Real store fixtures are still absent. See testing.md
+extension-installation check. Incoming retailer fixtures are retained; they have not been validated for the active Daraz integration. See testing.md
 and the repeatable harness commands below:
 
 ```sh
@@ -157,3 +157,10 @@ open lists react to changes without recreating deleted data.
 Automated persistence/module-reload checks and a synthetic ordinary-Chromium UI flow
 passed. Native extension save/restart acceptance remains unverified because the
 managed browser blocks extensions. No live merchant purchase or provider call ran.
+
+## Concurrent incoming work
+The Phase 8 merge retained new fixture files and their saver script. Conflicting
+source drafts from the incoming branch contained unresolved merge markers and an
+alternate notification/budget UI; exact copies are preserved under
+`docs/merge-preservation/` for separate integration. They were not activated in this
+storage/save-flow task, and existing consent/storage contracts remain in use.
