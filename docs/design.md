@@ -15,7 +15,7 @@ shared category alone is insufficient. Unknown products must not produce matches
 Privacy: request narrow store access after selection; enforce consent before observing.
 Never read payment/password fields. Keep owned items and visits local. Optional AI
 sends public product information through a protected proxy; never embed provider keys.
-Current proxy fails closed and makes no provider calls. Consent UI is not yet functional.
+The configured proxy calls OpenAI; without configuration it fails closed. Consent UI is implemented; live AI is unverified.
 
 ## Background-owned storage
 The active extension contracts remain in `extension/src/shared`; uploaded root-level
@@ -211,3 +211,32 @@ updates labels; absolute timestamps are authoritative and independent of worker
 lifetime. Disposal clears timers/listeners and stale read generations; deletion or
 consent removal immediately clears/hides records. Missing fields are unavailable,
 not guessed. No notification, budget, analytics or automatic purchase feature added.
+
+## Current AI contract — Phase 6 gap review
+The active Cloudflare Worker POST /classify calls OpenAI gpt-4o-mini chat completions
+with strict JSON schema. Only title, categoryText and imageUrl leave the extension;
+owned items, notes, visits and saved lists are excluded. AI_API_KEY is set only with
+`wrangler secret put AI_API_KEY`. EXTENSION_TOKEN is an optional abuse hurdle,
+not a durable secret. PROXY_URL identifies the Worker. No provider key is embedded.
+
+The proxy checks an explicitly allowlisted chrome-extension origin (declared and
+actual origins must agree), JSON content type, the optional token and Cloudflare
+rate binding (30/minute/IP). Bodies are capped at 2048 bytes with only those three
+fields: nonempty title <=1024 characters, categoryText <=512, imageUrl null or an
+approved/configured HTTPS CDN URL without credentials, fragment or nonstandard port.
+Images reject redirects, cap bytes at 512 KiB and check JPEG/PNG/WebP signature/MIME;
+validated bytes are sent as a low-detail data URL. Replies are bounded and validated
+against category/type pairs, purposes and confidence. Confidence below 0.5 becomes
+other/other/other; invalid output is rejected, not partially merged. Errors are
+generic and request bodies/credentials are not logged. Upstream code is unchanged.
+
+Keywords render immediately. Any proxy failure, offline, invalid reply or 3-second
+extension timeout retains keywords; temporary failures are not permanently cached.
+The Worker separately aborts image/upstream work after 2.5 seconds. Deployment,
+operator spending caps and live accuracy remain unverified.
+
+Configuration names: PROXY_URL and EXTENSION_TOKEN for extension/evaluation;
+AI_API_KEY (secret), optional EXTENSION_TOKEN (secret), ALLOWED_ORIGINS, IMAGE_HOSTS
+and CLASSIFY_RATE_LIMITER for the Worker. The accuracy CLI also needs UNHAUL_ORIGIN,
+a real allowlisted extension origin; it must never fabricate an origin or read the
+provider key. Run from extension with `npx tsx scripts/accuracy.ts`.

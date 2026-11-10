@@ -1,3 +1,4 @@
+import labels from './labels.json';
 import { afterEach, expect, it, vi } from 'vitest';
 import { classifyKeywords } from '../src/classify/keywords';
 import { parseAIClassification } from '../src/classify/validate';
@@ -76,4 +77,15 @@ it('proxy sends validated image bytes to the vision model and returns taxonomy-o
   expect(upstream.model).toBe('gpt-4o-mini');
   expect(upstream.messages[1].content[1].image_url.url).toMatch(/^data:image\/png;base64,/);
   expect(Object.keys(await response.json())).toEqual(['category', 'itemType', 'purpose', 'confidence']);
+});
+
+it('reports keyword misses against the unchanged hand labels', () => {
+  const misses = labels.flatMap(label => {
+    const actual = classifyKeywords(label.title);
+    return actual.category === label.category && actual.itemType === label.itemType ? []
+      : [{ title: label.title, expected: `${label.category}/${label.itemType}`, actual: `${actual.category}/${actual.itemType}` }];
+  });
+  console.info('Keyword label misses:', JSON.stringify(misses));
+  expect(labels.length).toBeGreaterThan(0);
+  expect(misses.length).toBeLessThanOrEqual(labels.length); // Diagnostic, not an accuracy target.
 });
