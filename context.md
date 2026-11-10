@@ -82,11 +82,41 @@ Read in this order, and leave a field empty (null) if no source has it. Never gu
 - **Model:** OpenAI gpt-4o-mini (text/image input confirmed from the official cookbook), called only through the proxy; live account/provider access remains unverified.
 - **Sends:** only public product info: title, category text, image URL. Never owned items, visits or anything personal. The consent screen says this.
 - **Returns:** JSON with category, itemType, purpose, confidence, all from section 9's lists.
-- **Validation:** must parse; every value must be in the lists; confidence under 0.5 means Other / unknown; invalid fields use the keyword value.
+- **Validation:** must parse; every value must be in the lists; confidence under 0.5 means Other / unknown; invalid replies fall back to keywords.
 - **Fallback:** 3 s timeout, offline or invalid means keyword rules. The panel always still works.
 - **Cache:** successful AI classifications use classifier/model-version + store/origin/product/variant keys and a 24-hour TTL. Temporary failures use uncached keywords and can retry.
-- **Proxy:** Cloudflare Worker, `POST /classify`. Checks the extension token, rejects bodies over 2 KB, about 30 requests per minute per IP, no body logging. Key stored with `wrangler secret`. Spending cap set on the AI account.
-- **Proof:** about 40 hand-labelled products in `tests/labels.json` across categories. Report AI and keyword accuracy plus median and slowest AI time in docs/testing.md. Target: AI at least 80% on item type and at least 15 points above keywords. Report honestly if it misses.
+- **Proxy:** Cloudflare Worker, `POST /classify`. Checks the optional extension token and explicit allowed extension origin, rejects bodies over 2 KB, about 30 requests per minute per IP, no body logging. Key stored with `wrangler secret`. Account spending caps are an operator responsibility, not verified by code.
+- **Evaluation:** currently four hand-labelled titles in `extension/tests/labels.json`; the referenced captures are absent from the current fixture set. Report AI and keyword accuracy plus median and slowest AI time in docs/testing.md. Target: AI at least 80% on item type and at least 15 points above keywords. Report honestly if it misses.
+
+### Current implementation and configuration
+The active Cloudflare Worker POST /classify calls OpenAI gpt-4o-mini chat completions
+with strict JSON schema. Only title, categoryText and imageUrl leave the extension;
+owned items, notes, visits and saved lists are excluded. AI_API_KEY is set only with
+`wrangler secret put AI_API_KEY`. EXTENSION_TOKEN is an optional abuse hurdle,
+not a durable secret. PROXY_URL identifies the Worker. No provider key is embedded.
+
+The proxy checks an explicitly allowlisted chrome-extension origin (declared and
+actual origins must agree), JSON content type, the optional token and Cloudflare
+rate binding (30/minute/IP). Bodies are capped at 2048 bytes with only those three
+fields: nonempty title <=1024 characters, categoryText <=512, imageUrl null or an
+approved/configured HTTPS CDN URL without credentials, fragment or nonstandard port.
+Images reject redirects, cap bytes at 512 KiB and check JPEG/PNG/WebP signature/MIME;
+validated bytes are sent as a low-detail data URL. Replies are bounded and validated
+against category/type pairs, purposes and confidence. Confidence below 0.5 becomes
+other/other/other; invalid output is rejected, not partially merged. Errors are
+generic and request bodies/credentials are not logged. Upstream code is unchanged.
+
+Keywords render immediately. Any proxy failure, offline, invalid reply or 3-second
+extension timeout retains keywords; temporary failures are not permanently cached.
+The Worker separately aborts image/upstream work after 2.5 seconds. Deployment,
+operator spending caps and live accuracy remain unverified.
+
+Configuration names: PROXY_URL and EXTENSION_TOKEN for extension/evaluation;
+AI_API_KEY (secret), optional EXTENSION_TOKEN (secret), ALLOWED_ORIGINS, IMAGE_HOSTS
+and CLASSIFY_RATE_LIMITER for the Worker. The accuracy CLI also needs UNHAUL_ORIGIN,
+a real allowlisted extension origin; it must never fabricate an origin or read the
+provider key. Run from extension with `npx tsx scripts/accuracy.ts`.
+
 
 ## 8. Matching and questions
 
@@ -188,3 +218,6 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Phase 6 uses optional gpt-4o-mini vision via Worker, immediate basic plus separate refinement, versioned AI-only cache | Official modality verified; live credentials/deployment unavailable. Purpose conflicts excluded; UI/product-reader integration remains separate |
 | 2026-11-10 | Phase 7 connects structured Daraz metadata to a consent-bound reflection UI; automatic opening markers use background storage.session per tab/product | Reader was empty; no extra stores or permissions added. Saving is explicitly disabled until Phase 8; synthetic browser verification only |
 | 2026-11-10 | Phase 8 stores absolute reconsiderAt/deadline, deduplicates active store/product/variant saves, and preserves decided history on resave | User requested cooling-off flow; Skip/Purchased are self-reported and immutable. Native Chrome restart still needs independent verification |
+| 2026-11-10 | Store list moved to `src/store/stores.ts` (feeds host_permissions, content matches and the reader); fixture stores added; reader accepts JSON-LD ProductGroup | Requested so saved fixtures are recognized by Chrome; `stores:check` vets new Pakistani stores before adding |
+
+| 2026-11-10 | Phase 6 gap review adds only fixture-title sweater/wallet synonyms; retains used matchItems; records four-label accuracy without label edits | Preserve active contracts and expose weak results rather than claiming unmeasured AI accuracy |

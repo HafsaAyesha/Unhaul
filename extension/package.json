@@ -11,7 +11,9 @@
     "test": "vitest run",
     "postinstall": "wxt prepare",
     "test:browser": "node scripts/smoke-extension.mjs",
-    "fixtures:auto": "node scripts/save-fixtures-auto.mjs"
+    "fixtures:auto": "node scripts/save-fixtures-auto.mjs",
+    "fixtures:check": "wxt build && node scripts/check-fixtures.mjs",
+    "stores:check": "node scripts/check-stores.mjs"
   },
   "devDependencies": {
     "playwright": "^1.65.0",

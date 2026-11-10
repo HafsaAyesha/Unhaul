@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import { STORE_HOST_PERMISSIONS } from './src/store/stores';
 // Public build configuration. Supply these variables to the build process.
 const proxy = process.env.PROXY_URL ?? '';
 let proxyHost: string[] = [];
@@ -17,6 +18,6 @@ export default defineConfig({
     name: 'Unhaul',
     description: 'Pause before impulse purchases across product categories.',
     permissions: ['storage'],
-    host_permissions: ['https://www.daraz.pk/*', ...proxyHost],
+    host_permissions: [...STORE_HOST_PERMISSIONS, ...proxyHost],
   },
 });

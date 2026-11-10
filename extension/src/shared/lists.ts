@@ -116,6 +116,7 @@ export const SYNONYMS: Record<string, ItemType> = {
   'power bank': 'power_bank', speaker: 'speaker',
   smartwatch: 'smartwatch', 'phone case': 'phone_case',
   // clothing
+  sweater: 'outerwear', wallet: 'bag', // Observed in saved Shopify product titles.
   suit: 'dress_suit', unstitched: 'dress_suit', lawn: 'dress_suit',
   shirt: 'top', kurta: 'top', kameez: 'top', top: 'top',
   trouser: 'bottoms', trousers: 'bottoms', pants: 'bottoms', jeans: 'bottoms',

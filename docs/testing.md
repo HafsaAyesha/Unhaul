@@ -169,3 +169,31 @@ preserved in docs/merge-preservation; they are not active or claimed as passed.
 Incoming fixtures, helper script, icon, package command and standalone insights module
 were retained. After resolution, reran the active 97-test suite, typecheck and build;
 all passed. Incoming raw fixture whitespace was preserved rather than reformatted.
+
+<!-- phase6-accuracy:start -->
+## Phase 6 measured accuracy — 2026-11-10T08:41:20.168Z
+
+Keyword itemType: 3/4 (75.0%); category: 3/4 (75.0%).
+AI accuracy unmeasured: PROXY_URL, EXTENSION_TOKEN and/or UNHAUL_ORIGIN absent.
+AI failures/unavailable: 4/4; attempted: 0.
+Median AI request time: unmeasured; slowest: unmeasured (includes failed attempts).
+
+| Title | Keyword category/itemType | AI category/itemType or failure |
+|---|---|---|
+| 3 Piece - Printed Embroidered Suit - U3PE-NISHA26WV1-178 | clothing_accessories/dress_suit | unavailable (missing configuration) |
+| Sensa Paper Cutter 613 | stationery/paper_cutter | unavailable (missing configuration) |
+| Monochrome Theme Magnetic Notepads For Fridge | other/other | unavailable (missing configuration) |
+| Barg - White & Turquoise Ceramic Mug | home_decor/mug | unavailable (missing configuration) |
+
+Only four unchanged labels; not a general benchmark. Their referenced captures are absent from current fixtures. Missing imageUrl means text-only evaluation, not a vision benchmark. No labels edited.
+<!-- phase6-accuracy:end -->
+
+### Phase 6 gap validation
+- Extension and proxy: `npx tsc --noEmit` passed.
+- `npx vitest run tests/phase6.test.ts`: 8 tests passed (one new diagnostic).
+- `npm run build` (extension): passed. Full suite intentionally not run.
+- New synonyms from actual saved titles: sweater → outerwear (Bonanza, Zellbury),
+  wallet → bag (Outfitters). No other synonyms or labels changed.
+- Keyword miss retained: “Monochrome Theme Magnetic Notepads For Fridge” → other/other;
+  expected stationery/notebook. No captured real title supports adding that plural
+  in this task. Live AI requests: zero; timings and AI accuracy remain unmeasured.
