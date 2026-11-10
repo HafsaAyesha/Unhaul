@@ -2,10 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   addListener: vi.fn(),
+  installed: vi.fn(),
+  startup: vi.fn(),
+  initializeStorage: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn(),
 }));
+vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage }));
 vi.mock('wxt/browser', () => ({ browser: {
-  runtime: { id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
+  runtime: { onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
 } }));
 vi.stubGlobal('defineBackground', (main: () => void) => main);
 vi.stubGlobal('defineContentScript', (definition: unknown) => definition);
@@ -14,6 +18,24 @@ describe('entrypoint connectivity', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+  });
+  it('initializes storage on installation and browser startup', async () => {
+    const background = (await import('../entrypoints/background')).default as unknown as () => void;
+    background();
+    await mocks.installed.mock.calls[0][0]();
+    await mocks.startup.mock.calls[0][0]();
+    expect(mocks.initializeStorage).toHaveBeenCalledTimes(2);
+  });
+  it('reports lifecycle initialization failures explicitly', async () => {
+    const failure = new Error('Storage unavailable');
+    mocks.initializeStorage.mockRejectedValueOnce(failure);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const background = (await import('../entrypoints/background')).default as unknown as () => void;
+      background();
+      await mocks.installed.mock.calls[0][0]();
+      expect(error).toHaveBeenCalledWith('[Unhaul] Storage initialization failed; existing data retained', failure);
+    } finally { error.mockRestore(); }
   });
   it('routes a content PING through the background and logs PONG', async () => {
     const background = (await import('../entrypoints/background')).default as unknown as () => void;

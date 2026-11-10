@@ -10,4 +10,8 @@ export interface SavedItem {
   status: 'waiting' | 'skipped' | 'purchased';
 }
 export interface VisitRecord { productId: string; timestamps: number[]; }
-export interface Settings { schemaVersion: 1; consentGranted: boolean; }
+export interface Settings { schemaVersion: 1; consentGiven: boolean; }
+export const DEFAULT_SETTINGS: Settings = {
+  schemaVersion: 1,
+  consentGiven: false,
+};

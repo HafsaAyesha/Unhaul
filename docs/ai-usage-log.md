@@ -10,3 +10,9 @@ personal data. Record what changed and how outputs were checked.
 AI assistance added scoped Daraz permissions, PING/PONG entrypoints, runtime message
 guards, connectivity tests, browser smoke script and handoff instructions.
 Validation results and browser-policy limitations are recorded in testing.md.
+
+## Storage initialization implementation — 2026-11-10
+AI assistance implemented namespaced keys, version-1 consent defaults, lifecycle
+initialization, safe legacy-item migration, and focused storage/lifecycle tests.
+Changes were checked with the existing tests, TypeScript and production build;
+Chrome lifecycle behavior was not manually verified in this task.

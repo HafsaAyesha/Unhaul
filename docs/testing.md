@@ -36,3 +36,12 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   from cdn.playwright.dev. Native browser messaging remains unverified.
 - Live Daraz request: blocked by proxy 403 CONNECT; live product check is pending.
 - Repeatable browser/manual steps and A/B handoff: phase-2-handoff.md.
+
+## Storage initialization — 10 November 2026
+- `npm test`: 3 files, 24 tests passed; zero failures/skips.
+- `npm run typecheck`: passed.
+- `npm run build`: passed; production permissions unchanged.
+- Focused checks cover absent/default settings, true/false consent preservation,
+  unsupported settings, repeated/concurrent initialization, lifecycle hooks/errors,
+  legacy-item preservation/merging/conflicts and copy/cleanup failures.
+- Browser installation/startup/restart behavior was not manually verified in this task.
