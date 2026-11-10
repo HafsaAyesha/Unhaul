@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOptionsController, type OptionsState } from '../entrypoints/options/controller';
 import { DEFAULT_SETTINGS } from '../src/shared/types';
 import { sampleItems } from '../src/storage/sample-items';
-const client = { getSettings: vi.fn(), setConsent: vi.fn(), getItems: vi.fn(), loadSampleItems: vi.fn(), deleteAllUnhaulData: vi.fn() };
+const client = { getSettings: vi.fn(), setConsent: vi.fn(), getItems: vi.fn(), loadSampleItems: vi.fn(), addItem: vi.fn(), deleteItem: vi.fn(), deleteAllUnhaulData: vi.fn() };
 let state: OptionsState;
 let controller: ReturnType<typeof createOptionsController>;
 function deferred<T>() {
@@ -97,5 +97,24 @@ describe('options consent', () => {
     await controller.deleteData(); expect(client.deleteAllUnhaulData).toHaveBeenCalledTimes(1);
     expect(state.screen).toBe('consent'); expect(state.items).toEqual([]);
     expect(client.setConsent).not.toHaveBeenCalled();
+  });
+});
+describe('My Items quick-add, delete and turn off', () => {
+  const enabled = async () => { client.getSettings.mockResolvedValue({ ...DEFAULT_SETTINGS, consentGiven: true }); await controller.refresh(); };
+  it('saves a manual item with the default purpose when none is picked', async () => {
+    await enabled(); client.addItem.mockResolvedValue(undefined);
+    expect(await controller.addItem({ name: '  Blue mug ', category: 'home_decor', itemType: 'mug', purpose: '' })).toBe(true);
+    expect(client.addItem.mock.calls[0][0]).toMatchObject({ name: 'Blue mug', category: 'home_decor', itemType: 'mug', purpose: 'other', source: 'manual' });
+  });
+  it('rejects an item type from another category without saving', async () => {
+    await enabled();
+    expect(await controller.addItem({ name: 'Mug', category: 'stationery', itemType: 'mug' })).toBe(false);
+    expect(client.addItem).not.toHaveBeenCalled(); expect(state.error).toBeTruthy();
+  });
+  it('deletes one item and turns off without deleting data', async () => {
+    await enabled(); client.deleteItem.mockResolvedValue(undefined);
+    await controller.deleteItem(sampleItems[0].id); expect(client.deleteItem).toHaveBeenCalledWith(sampleItems[0].id);
+    await controller.turnOff(); expect(client.setConsent).toHaveBeenCalledWith(false);
+    expect(state.screen).toBe('consent'); expect(client.deleteAllUnhaulData).not.toHaveBeenCalled();
   });
 });
