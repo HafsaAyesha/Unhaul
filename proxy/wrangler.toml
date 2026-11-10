@@ -2,3 +2,14 @@ name = "unhaul-ai-proxy"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
 # Configure provider/model, rate limits and permitted extension origins before deployment.
+
+[vars]
+# Set the actual production extension origin(s), comma-separated; never use '*'.
+ALLOWED_ORIGINS = ""
+# Select only needed public CDN hosts from the approved list in src/index.ts.
+IMAGE_HOSTS = "cdn.shopify.com,img.drz.lazcdn.com,static-01.daraz.pk"
+
+[[ratelimits]]
+name = "CLASSIFY_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }

@@ -1,7 +1,11 @@
 import { browser } from 'wxt/browser';
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+import { createAnalysisService } from '../src/classify/analysis';
+>>>>>>> 2af525da18ce24d9afafd49b6aba7ae3e6b8fb65
 import { isPingMessage, isGetConsentMessage, isProductRequest, type ConsentResponse, type ProductOperationError } from '../src/shared/messages';
-import { initializeStorage, getSettings, beginConsentWork } from '../src/storage/repo';
+import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession } from '../src/storage/repo';
 import { invalidateConsentWork } from '../src/consent/work';
 import { STORAGE_KEYS } from '../src/storage/keys';
 import { isSettings } from '../src/shared/storage-validation';
@@ -15,10 +19,14 @@ import { isProduct, record } from '../src/shared/storage-validation';
 import type { Product } from '../src/shared/types';
 
 export default defineBackground(() => {
+  const analysis = createAnalysisService();
+  browser.tabs.onRemoved.addListener(tabId => {
+    void clearPanelSession(tabId).catch(() => console.error('[Unhaul] Panel session cleanup failed'));
+  });
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !Object.hasOwn(changes, STORAGE_KEYS.settings)) return;
     const settings: unknown = changes[STORAGE_KEYS.settings].newValue;
-    if (!isSettings(settings) || settings.consentGiven !== true) invalidateConsentWork();
+    if (!isSettings(settings) || settings.consentGiven !== true) { invalidateConsentWork(); analysis.revoke(); }
   });
   const initialize = async () => {
     try {
@@ -85,10 +93,28 @@ export default defineBackground(() => {
       );
       return true;
     }
-    if (record(message) && ['PRODUCT_SEEN', 'ADD_TO_CART_CLICKED', 'SAVE_ITEM'].includes(String(message.type))) {
+    if (record(message) && message.type === 'CLAIM_PANEL_OPEN') {
+      if (!sender.tab || typeof message.productId !== 'string' || !message.productId.trim() || message.productId.length > 2048) {
+        sendResponse({ type: 'PANEL_OPEN_PERMISSION', allowed: false });
+        return;
+      }
+      void claimPanelOpen(sender.tab.id!, message.productId).then(
+        allowed => sendResponse({ type: 'PANEL_OPEN_PERMISSION', allowed }),
+        () => sendResponse({ type: 'PANEL_OPEN_PERMISSION', allowed: false }),
+      );
+      return true;
+    }
+    if (record(message) && ['PRODUCT_SEEN', 'REFINE_PRODUCT', 'ADD_TO_CART_CLICKED', 'SAVE_ITEM'].includes(String(message.type))) {
       if (!isProductRequest(message)) {
         sendResponse({ type: 'ERROR', code: 'INVALID_REQUEST', message: 'Invalid product request.' } satisfies ProductOperationError);
         return;
+      }
+      if (message.type === 'PRODUCT_SEEN' || message.type === 'REFINE_PRODUCT') {
+        // Per document/frame sessions reject late variants/navigation replies.
+        const owner = `${sender.tab?.id ?? 'options'}:${sender.frameId ?? 0}:${sender.documentId ?? sender.url ?? ''}`;
+        const task = message.type === 'PRODUCT_SEEN' ? analysis.basic(message.product, owner) : analysis.refine(message.analysisId, owner);
+        void task.then(sendResponse, error => sendResponse({ type: 'ERROR', code: error instanceof Error && /consent/i.test(error.message) ? 'CONSENT_REQUIRED' : 'ANALYSIS_FAILED', message: 'Analysis unavailable, revoked or superseded.' } satisfies ProductOperationError));
+        return true;
       }
       void beginConsentWork().then(work => {
         // Product extraction/visits/classification handlers are unfinished. Future work

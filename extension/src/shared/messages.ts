@@ -1,12 +1,13 @@
 import { browser } from 'wxt/browser';
 // src/shared/messages.ts
-import type { Product, Classification, Match } from './types';
+import type { Product, AnalysisResult } from './types';
 import { WAITS, type WaitKey } from './lists';
+import { isAnalysisResult } from './analysis-validation';
 import { record, isProduct, isNonemptyString } from './storage-validation';
 
 export type GetConsentMessage = { type: 'GET_CONSENT' };
 export type ConsentResponse = { consentGiven: boolean };
-export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED'; message: string };
+export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED'; message: string };
 export function isGetConsentMessage(value: unknown): value is GetConsentMessage {
   return record(value) && value.type === 'GET_CONSENT' && Object.keys(value).length === 1;
 }
@@ -18,6 +19,8 @@ export type Request =
   | { type: 'PING' }
   | GetConsentMessage
   | { type: 'PRODUCT_SEEN'; product: Product }
+  | { type: 'REFINE_PRODUCT'; analysisId: string }
+  | { type: 'CLAIM_PANEL_OPEN'; productId: string }
   | { type: 'ADD_TO_CART_CLICKED'; productId: string }
   | { type: 'SAVE_ITEM'; product: Product; wait: WaitKey };
 
@@ -25,15 +28,8 @@ export type Response =
   | { type: 'PONG' }
   | ConsentResponse
   | ProductOperationError
-  | {
-      type: 'MATCH_RESULT';
-      productId: string;
-      classification: Classification;
-      matches: Match[];          // up to 3
-      question: string;
-      repeatVisit: boolean;
-      alreadySaved?: boolean;    // product is already on the cooling-off list
-    }
+  | AnalysisResult
+  | { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean }
   | { type: 'OK' }
   | { type: 'SAVE_RESULT'; result: 'saved' | 'already_saved'; deadline: number };
 
@@ -41,7 +37,9 @@ export type Response =
 export interface ReplyFor {
   PING: Extract<Response, { type: 'PONG' }>;
   GET_CONSENT: ConsentResponse;
-  PRODUCT_SEEN: Extract<Response, { type: 'MATCH_RESULT' }>;
+  PRODUCT_SEEN: AnalysisResult;
+  REFINE_PRODUCT: AnalysisResult;
+  CLAIM_PANEL_OPEN: { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean };
   ADD_TO_CART_CLICKED: Extract<Response, { type: 'OK' }>;
   SAVE_ITEM: Extract<Response, { type: 'SAVE_RESULT' }>;
 }
@@ -53,6 +51,8 @@ export async function send<T extends Request['type']>(
   const reply: unknown = await browser.runtime.sendMessage(req);
   if (req.type === 'GET_CONSENT' && !isConsentResponse(reply)) throw new Error('Invalid consent response.');
   if (record(reply) && reply.type === 'ERROR') throw new Error(typeof reply.message === 'string' ? reply.message : 'Product operation denied.');
+  if ((req.type === 'PRODUCT_SEEN' || req.type === 'REFINE_PRODUCT') && !isAnalysisResult(reply)) throw new Error('Invalid analysis response.');
+  if (req.type === 'CLAIM_PANEL_OPEN' && (!record(reply) || reply.type !== 'PANEL_OPEN_PERMISSION' || typeof reply.allowed !== 'boolean')) throw new Error('Invalid panel permission response.');
   return reply as ReplyFor[T];
 }
 
@@ -70,11 +70,12 @@ export function isPongMessage(value: unknown): value is Extract<Response, { type
 export type { StorageRequest, StorageResponse, StorageArguments, StorageResults } from './storage-messages';
 export { isStorageRequest, isStorageResponse } from './storage-messages';
 
-export type ProductRequest = Extract<Request, { type: 'PRODUCT_SEEN' | 'ADD_TO_CART_CLICKED' | 'SAVE_ITEM' }>;
+export type ProductRequest = Extract<Request, { type: 'PRODUCT_SEEN' | 'REFINE_PRODUCT' | 'ADD_TO_CART_CLICKED' | 'SAVE_ITEM' }>;
 export function isProductRequest(value: unknown): value is ProductRequest {
   if (!record(value)) return false;
   switch (value.type) {
     case 'PRODUCT_SEEN': return isProduct(value.product);
+    case 'REFINE_PRODUCT': return isNonemptyString(value.analysisId);
     case 'ADD_TO_CART_CLICKED': return isNonemptyString(value.productId);
     case 'SAVE_ITEM': return isProduct(value.product) && typeof value.wait === 'string' && Object.hasOwn(WAITS, value.wait);
     default: return false;

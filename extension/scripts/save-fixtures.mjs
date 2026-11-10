@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const URLS = [
   'https://bonanzasatrangi.com/products/c-bean-turtle-neck-zipper-full-sleeves-sweater-753-13',
   'https://junaidjamshed.com/products/matt-black-plain-peshawari-sandals-jpc21363gkpln',
-  'https://beechtree.pk/products/bt12603un004720-green',
+  'https://crossstitch.pk/products/espresso-dream-rts',
   'https://zellbury.com/products/mock-neck-zipper-sweater-1005',
   'https://outfitters.com.pk/products/f0283-113',
 ].filter((u) => /\/products\/[^/?#]+/.test(new URL(u).pathname));

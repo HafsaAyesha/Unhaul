@@ -44,3 +44,19 @@ added the missing cap taxonomy entry/default purpose/label, updated the existing
 journal-ID assertion, and added one focused data-validation test. No sample-loading
 or migration behavior changed. Real-fixture alignment remains pending because the
 fixtures directory contains only a README. Legacy-ID coexistence is documented.
+
+## Phase 6 — 2026-11-10
+AI assistance implemented title-first rules, explained/ranked matching, consent-aware
+basic/refinement analysis, atomic versioned caching, optional build configuration and
+the image-capable OpenAI proxy. Official OpenAI cookbook checked for model modality.
+A compact focused test file plus two existing integration cases use synthetic inputs
+and mocked provider responses. Results are in testing.md. No credentials were read,
+no live provider call/deployment occurred, and no commit/push was made for this task.
+
+## Phase 7 — 2026-11-10
+AI assistance implemented reflection UI, a minimum structured reader to replace the
+empty extractor, guarded per-tab opening markers and existing-history prompt selection.
+Added two focused cases plus a synthetic Chromium UI harness; no new dependencies.
+The previous uncommitted Phase 6 work is included for the user-authorized main push.
+Saving is explicitly unavailable, and live merchant/native extension/AI behavior is
+not claimed. Verification details are in testing.md.

@@ -24,8 +24,9 @@ const PHRASES: [RegExp, ItemType][] = (() => {
 
 /** Keyword fallback. Unknown products become Other with zero confidence. */
 export function classifyKeywords(title: string, categoryText = ''): Classification {
-  const text = `${title} ${categoryText}`.toLowerCase();
-  const hit = PHRASES.find(([pattern]) => pattern.test(text));
+  // Specific title evidence takes precedence over broad breadcrumb/category metadata.
+  const hit = PHRASES.find(([pattern]) => pattern.test(title.toLowerCase()))
+    ?? PHRASES.find(([pattern]) => pattern.test(categoryText.toLowerCase()));
   const itemType: ItemType = hit ? hit[1] : 'other';
   return {
     category: CATEGORY_OF.get(itemType) ?? 'other',

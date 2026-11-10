@@ -7,7 +7,8 @@ import { isStorageRequest } from '../src/shared/storage-messages';
 type Handler = (request: unknown, sender: TestSender, respond: (reply: unknown) => void) => unknown;
 const mocks = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), remove: vi.fn(), send: vi.fn(), listen: vi.fn() }));
 vi.mock('wxt/browser', () => ({ browser: {
-  storage: { onChanged: { addListener: vi.fn() }, local: { get: mocks.get, set: mocks.set, remove: mocks.remove } },
+  tabs: { onRemoved: { addListener: vi.fn() } },
+  storage: { session: { get: async () => ({}), set: async () => {}, remove: async () => {} }, onChanged: { addListener: vi.fn() }, local: { get: mocks.get, set: mocks.set, remove: mocks.remove } },
   runtime: { id: 'unhaul', getURL: (path: string) => `chrome-extension://unhaul/${path.replace(/^\//, '')}`,
     sendMessage: mocks.send, onMessage: { addListener: mocks.listen },
     onInstalled: { addListener: vi.fn() }, onStartup: { addListener: vi.fn() } },
@@ -101,7 +102,7 @@ it('guards product messages independently and does not pretend unfinished operat
   expect(await mocks.send(request)).toMatchObject({ type: 'ERROR', code: 'CONSENT_REQUIRED' });
   expect(await mocks.send({ type: 'PRODUCT_SEEN', product: {} })).toMatchObject({ code: 'INVALID_REQUEST' });
   data[K.settings] = { schemaVersion: 1, consentGiven: true };
-  expect(await mocks.send(request)).toMatchObject({ type: 'ERROR', code: 'NOT_IMPLEMENTED' });
+  expect(await mocks.send(request)).toMatchObject({ type: 'MATCH_RESULT', phase: 'basic' });
   expect(Object.keys(data)).toEqual([K.settings]);
 });
 it('denies sensitive snapshot messages without consent and still allows deletion/settings', async () => {
@@ -110,4 +111,38 @@ it('denies sensitive snapshot messages without consent and still allows deletion
   await expect(client.setClassificationCache({})).rejects.toThrow('Consent');
   await client.deleteAllUnhaulData(); expect(data).toEqual({});
   await client.setConsent(true); await client.setVisits([]); expect(data[K.visits]).toEqual([]);
+});
+it('returns basic analysis before AI and reuses atomic AI cache across requests but not variants', async () => {
+  const ai = await import('../src/classify/ai');
+  const spy = vi.spyOn(ai, 'classifyAI').mockResolvedValue({ ...EXAMPLE_CLASSIFICATION, source: 'ai', classifiedAt: Date.now() });
+  try {
+    const { EXAMPLE_PRODUCT } = await import('../src/shared/examples');
+    const { storageClient: client } = await import('../src/storage/client');
+    await client.setConsent(true);
+    const basic = await mocks.send({ type: 'PRODUCT_SEEN', product: EXAMPLE_PRODUCT });
+    expect(basic).toMatchObject({ type: 'MATCH_RESULT', phase: 'basic' }); expect(spy).not.toHaveBeenCalled();
+    const refined = await mocks.send({ type: 'REFINE_PRODUCT', analysisId: basic.analysisId });
+    expect(refined).toMatchObject({ phase: 'ai' }); expect(spy).toHaveBeenCalledTimes(1);
+    expect(Object.keys(await client.getClassificationCache())).toHaveLength(1);
+    expect(await mocks.send({ type: 'PRODUCT_SEEN', product: EXAMPLE_PRODUCT })).toMatchObject({ phase: 'cached' });
+    expect(await mocks.send({ type: 'PRODUCT_SEEN', product: { ...EXAMPLE_PRODUCT, variantId: 'other-variant' } })).toMatchObject({ phase: 'basic' });
+    expect(spy).toHaveBeenCalledTimes(1);
+  } finally { spy.mockRestore(); }
+});
+it('discards a pending AI result after deletion/re-agreement without repopulating the cache', async () => {
+  const ai = await import('../src/classify/ai');
+  let finish!: (value: typeof EXAMPLE_CLASSIFICATION) => void;
+  const spy = vi.spyOn(ai, 'classifyAI').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  try {
+    const { EXAMPLE_PRODUCT } = await import('../src/shared/examples');
+    const { storageClient: client } = await import('../src/storage/client');
+    await client.setConsent(true);
+    const basic = await mocks.send({ type: 'PRODUCT_SEEN', product: EXAMPLE_PRODUCT });
+    const pending = mocks.send({ type: 'REFINE_PRODUCT', analysisId: basic.analysisId });
+    await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    await client.deleteAllUnhaulData(); await client.setConsent(true);
+    finish({ ...EXAMPLE_CLASSIFICATION, source: 'ai', classifiedAt: Date.now() });
+    expect(await pending).toMatchObject({ type: 'ERROR' });
+    expect(await client.getClassificationCache()).toEqual({});
+  } finally { spy.mockRestore(); }
 });
