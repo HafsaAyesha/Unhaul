@@ -71,69 +71,35 @@ export function createHome(root: HTMLElement, client: HomeClient, onNavigate: (v
     const current = ++revision;
     root.replaceChildren();
     const loading = root.ownerDocument.createElement('p');
-    loading.textContent = 'Loading your journey…';
+    loading.textContent = 'Loading your activity…';
     root.append(loading);
     try {
-      const [settings, items, saved] = await Promise.all([client.getSettings(), client.getItems(), client.getSavedItems()]);
+        const saved = await client.getSavedItems();
       if (!enabled || disposed || current !== revision) return;
-      render(settings, items, saved);
+        render(saved);
     } catch (failure) {
       if (!enabled || disposed || current !== revision) return;
       root.replaceChildren();
       const error = root.ownerDocument.createElement('p');
       error.setAttribute('role', 'alert');
-      error.textContent = failure instanceof Error ? failure.message : 'Could not load your journey.';
+      error.textContent = failure instanceof Error ? failure.message : 'Could not load your activity.';
       const retry = root.ownerDocument.createElement('button');
       retry.type = 'button'; retry.textContent = 'Retry'; retry.addEventListener('click', () => { void refresh(); });
       root.append(error, retry);
     }
   };
-  const render = (settings: Settings, items: OwnedItem[], saved: SavedItem[]): void => {
+  const render = (saved: SavedItem[]): void => {
     const doc = root.ownerDocument;
     root.replaceChildren();
     const hero = doc.createElement('div'); hero.className = 'home-hero';
-    const greeting = doc.createElement('p'); greeting.className = 'home-eyebrow'; greeting.textContent = 'YOUR UNHAUL JOURNEY';
+    const eyebrow = doc.createElement('p'); eyebrow.className = 'home-eyebrow'; eyebrow.textContent = 'UNHAUL';
+    const name = doc.createElement('h3'); name.className = 'home-name'; name.textContent = 'Shop with intention.';
     const promise = doc.createElement('p'); promise.className = 'home-promise'; promise.textContent = 'A pause before your next impulse purchase.';
-    const intro = doc.createElement('p'); intro.className = 'home-intro'; intro.textContent = 'Build a small, thoughtful shopping habit—one decision at a time.';
-    hero.append(greeting, promise, intro);
-    const steps = journeySteps(settings, items, saved);
-    const complete = steps.filter(step => step.done).length;
-    const progressHeader = doc.createElement('div'); progressHeader.className = 'journey-header';
-    const progressTitle = doc.createElement('h3'); progressTitle.textContent = 'Your journey';
-    const progress = doc.createElement('p'); progress.className = 'progress'; progress.textContent = `${complete} of ${steps.length} done`;
-    progressHeader.append(progressTitle, progress);
-    const progressTrack = doc.createElement('div'); progressTrack.className = 'progress-track';
-    const progressBar = doc.createElement('div'); progressBar.className = 'progress-bar'; progressBar.style.width = `${(complete / steps.length) * 100}%`;
-    progressTrack.append(progressBar);
-    const checklist = doc.createElement('ol'); checklist.className = 'journey-list';
-    for (const step of steps) {
-      const row = doc.createElement('li'); row.className = step.done ? 'done' : '';
-      row.textContent = `${step.done ? 'Done: ' : ''}${step.title}`;
-      if (!step.done && step.id === 'owned') {
-        const actions = doc.createElement('div'); actions.className = 'journey-actions';
-        const sample = doc.createElement('button'); sample.type = 'button'; sample.textContent = 'Load sample items'; sample.addEventListener('click', onLoadSamples);
-        const add = doc.createElement('button'); add.type = 'button'; add.textContent = 'Add an item'; add.addEventListener('click', () => onNavigate('items'));
-        actions.append(sample, add); row.append(actions);
-      }
-      checklist.append(row);
-    }
-    const next = steps.find(step => !step.done);
-    const nextCard = doc.createElement('div'); nextCard.className = 'next-step';
-    const nextText = doc.createElement('p'); nextText.textContent = next ? `Next step: ${next.title}` : 'You are all set. Keep taking a moment before you buy.';
-    nextCard.append(nextText);
-    if (next?.id === 'owned') {
-      const button = doc.createElement('button'); button.type = 'button'; button.textContent = 'Add an item'; button.addEventListener('click', () => onNavigate('items')); nextCard.append(button);
-    } else if (next?.id === 'saved') {
-      const button = doc.createElement('button'); button.type = 'button'; button.textContent = 'View saved items'; button.addEventListener('click', () => onNavigate('saved')); nextCard.append(button);
-    } else if (next?.id === 'decision') {
-      const button = doc.createElement('button'); button.type = 'button'; button.textContent = 'View saved items'; button.addEventListener('click', () => onNavigate('saved')); nextCard.append(button);
-    }
-    const journey = doc.createElement('section'); journey.className = 'journey-panel';
-    journey.append(progressHeader, progressTrack, checklist, nextCard);
-    root.append(hero, journey);
+    const problem = doc.createElement('p'); problem.className = 'home-problem'; problem.textContent = 'Online shopping is designed to make buying effortless. Unhaul helps you slow down, reflect on what you already own, and make purchases you feel good about.';
+    hero.append(eyebrow, name, promise, problem);
 
     const summary = doc.createElement('div'); summary.className = 'summary-tiles';
-    const summaryHeading = doc.createElement('h3'); summaryHeading.className = 'summary-heading'; summaryHeading.textContent = 'At a glance';
+    const summaryHeading = doc.createElement('h3'); summaryHeading.className = 'summary-heading'; summaryHeading.textContent = 'Your activity at a glance';
     root.append(summaryHeading);
     const counts = homeSummary(saved);
     for (const [label, value] of [['Waiting', String(counts.waiting)], ['Ready to decide', String(counts.ready)], ['Skipped', String(counts.skipped)]] as const) {
