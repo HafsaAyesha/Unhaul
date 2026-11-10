@@ -7,12 +7,12 @@ Complete before 3:00 PM. Submit your final commit hash through the organizers' f
 - **Team name:** TBD (fill in)
 - **Repository URL:** https://github.com/HafsaAyesha/Unhaul
 - **Final commit hash:** TBD (`git rev-parse HEAD` on main after the last merge)
-- **Live URL / install link:** TBD (GitHub Release with `unhaul-extension-0.1.0-chrome.zip`)
+- **Live URL / install link:** https://github.com/HafsaAyesha/Unhaul/releases/tag/v1.0.0 (asset: `unhaul-extension-0.1.0-chrome.zip`)
 - **Submitted at (time):** TBD
 
 ## Checklist
 
-- [ ] Product is deployed and reachable without our laptops (create the GitHub Release)
+- [x] Product is deployed and reachable without our laptops (GitHub Release v1.0.0)
 - [ ] README judge quick start tested by a team member on a fresh device or browser
 - [x] Test accounts listed in README and working (none needed: Unhaul has no login)
 - [x] All tests pass (see docs/testing.md)

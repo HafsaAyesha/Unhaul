@@ -12,7 +12,7 @@ The user is an online shopper in Pakistan who often buys things they already hav
 
 ## Live deployment
 
-- **URL / install link:** [RELEASE URL, add after `gh release create`]
+- **URL / install link:** https://github.com/HafsaAyesha/Unhaul/releases/tag/v1.0.0
 - **Platform:** Google Chrome (desktop), loaded as an unpacked Manifest V3 extension
 
 ## Judge quick start (under 5 minutes)
