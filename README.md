@@ -2,18 +2,35 @@
 A Chrome extension that helps users reconsider impulse purchases across categories:
 stationery, home décor, toys, electronics, clothing and more.
 
-## Status
-Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
-classification, matching and installation consent onboarding exist. Structured product
-reading and reflection UI are implemented for the existing Daraz scope; live store
-verification is pending. Saving and the cooling-off list are implemented with persisted absolute deadlines. AI refinement is implemented but disabled until the proxy is configured and deployed.
-Daraz Pakistan is the Phase 2 target. Production host access is restricted to
-`https://www.daraz.pk/*`, with content injection only on `/products/*`.
-The content script reads products and mounts a reflection badge/panel only after
-literal true consent. It stops on revocation and resumes after agreement in an
-already-open supported tab. PING/PONG remains a diagnostic.
-Live store extraction is not verified.
-Automatic visit recording is not enabled; external AI calls are disabled without proxy configuration.
+## Status (2026-11-10, submission build)
+MVP features FR-01 to FR-17 are implemented; see `docs/requirements.md` for each one's status
+and what is verified. AI refinement runs only when the proxy is deployed and `PROXY_URL` /
+`EXTENSION_TOKEN` are set at build time; otherwise the keyword fallback is used and the panel
+still works.
+
+## Install (judges)
+1. Download `unhaul-*-chrome.zip` from the latest GitHub Release and unzip it.
+2. Open `chrome://extensions`, turn on Developer mode, click **Load unpacked** and pick the unzipped folder.
+3. The consent page opens. Click **Agree**, then **Load sample items** and quick-add one or two of your own.
+4. Open a product page on a supported store, for example
+   https://outfitters.com.pk/products/f0283-113, or any product on the stores listed below.
+5. Click Add to cart. The store adds it as normal and the Unhaul panel opens. Choose **Save for later**.
+6. Open the extension's options page to see the cooling-off list, countdown, Skip and Purchased.
+
+## Supported stores
+The single list is `extension/src/store/stores.ts` (it feeds host_permissions, the content
+script matches and the product reader; never `<all_urls>`). Each store passed
+`npm run stores:check` on 2026-11-10: Daraz, Stationers.pk, The Stationery Company, Zubaida's,
+Rung, The School Store, Saleemi Book Depot, Toy Company, Toynix, Odeez, Baby Bazar,
+Chase Value, Design Your Own, Blingspot, SOZ, Nishat Linen, Bonanza Satrangi, Cross Stitch,
+Junaid Jamshed, Outfitters and Zellbury.
+
+Store checks (run in `extension/`):
+- `npm run stores:check` vets candidate stores live (bot blocks, login walls, robots.txt, product data, reader).
+- `npm run fixtures:auto` saves product pages from the listed stores into `tests/fixtures/`.
+- `npm run fixtures:check` builds and loads the extension in Chromium, serves each fixture at its
+  real URL offline, and checks permissions, content-script injection and the reader.
+  First time only: `npx playwright install chromium`.
 
 ## Development
 Use the existing checkout; no extra worktree is needed. Node.js 22.12+ recommended.
@@ -120,8 +137,8 @@ The minimal structured reader uses Product JSON-LD or product Open Graph metadat
 no guessed merchant DOM selectors are used. It rejects contradictory canonical URLs
 and waits for metadata changes on path navigation. Variant prices require matching
 SKU offers; otherwise the price stays unavailable. Existing recorded history can
-select the repeat-visit prompt (prior visit 30 minutes–30 days old); this phase does
-not add automatic visit recording. Unknown/unrecognized pages show no shopping UI.
+select the repeat-visit prompt (prior visit 30 minutes–30 days old). Visits are recorded
+locally after each product analysis, once per product per 30 minutes, kept 30 days. Unknown/unrecognized pages show no shopping UI.
 
 A synthetic ordinary-Chromium smoke check passed; this is not a live Daraz or native
 extension-installation check. Incoming retailer fixtures are retained; they have not been validated for the active Daraz integration. See testing.md

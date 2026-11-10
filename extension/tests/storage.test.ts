@@ -295,3 +295,20 @@ it('recognizes legacy active records and rejects saves/decisions after revocatio
   await expect(decideSavedItem(EXAMPLE_SAVED.id, 'skipped')).rejects.toThrow('Consent');
   expect(data).toEqual({});
 });
+describe('visit recording (FR-05)', () => {
+  it('counts the same product once within 30 minutes and drops visits older than 30 days', async () => {
+    data[K.settings] = { schemaVersion: 1, consentGiven: true };
+    const now = Date.UTC(2026, 10, 10);
+    data[K.visits] = [{ productId: 'old', times: [now - 31 * 86_400_000] }];
+    const { recordVisit } = await import('../src/storage/repo');
+    await recordVisit('p1', now);
+    await recordVisit('p1', now + 10 * 60_000);
+    await recordVisit('p1', now + 31 * 60_000);
+    expect(data[K.visits]).toEqual([{ productId: 'p1', times: [now, now + 31 * 60_000] }]);
+  });
+  it('does not record without consent', async () => {
+    data[K.settings] = { schemaVersion: 1, consentGiven: false };
+    await expect((await import('../src/storage/repo')).recordVisit('p1')).rejects.toThrow();
+    expect(data[K.visits]).toBeUndefined();
+  });
+});

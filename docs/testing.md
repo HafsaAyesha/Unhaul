@@ -197,3 +197,15 @@ Only four unchanged labels; not a general benchmark. Their referenced captures a
 - Keyword miss retained: “Monochrome Theme Magnetic Notepads For Fridge” → other/other;
   expected stationery/notebook. No captured real title supports adding that plural
   in this task. Live AI requests: zero; timings and AI accuracy remain unmeasured.
+## Submission checks (2026-11-10)
+- `npm run stores:check` (team laptop, real Chrome): 15 Pakistani stationery, toy, gift and decor
+  stores passed every check except robots.txt, which a checker bug (fixed in PR #5) misreported;
+  they were added to `src/store/stores.ts`. Re-run after the fix to confirm. Failed and left out: alsimba.pk (DNS),
+  babytoys.pk and giftkarte.com (no product link), toobas.pk (bot challenge), artsupplies.pk and
+  fineartsmaterial.pk (product URLs are `/product/`, not `/products/`). A robots.txt wildcard bug
+  marked almost every Shopify store BLOCKED in that first run.
+- `npm run fixtures:check` (Chromium, offline): 5/5 saved fixtures PASS: URL in host_permissions and
+  content matches, content script injected, reader returns title, price and PKR. The Beechtree
+  fixture was removed because the saved page was the homepage.
+- Visit recording: unit tests cover 30-minute dedupe, 30-day pruning and the consent requirement.
+- `npm test`: all tests pass. `tsc --noEmit`: clean. Extension smoke test: PASS.

@@ -78,3 +78,8 @@ AI assistance added fixture-backed sweater → outerwear and wallet → bag syno
 retained matchItems because core.test.ts uses it, corrected AI documentation and
 added an unchanged-label diagnostic and accuracy CLI. No upstream/provider changes,
 labels edited or credentials added. Measured results are in testing.md.
+2026-11-10 (Claude Code): wrote `stores:check` (vets Pakistani stores) and `fixtures:check` (offline
+Chromium fixture check), moved the store list to `src/store/stores.ts`, added the 15 stores that passed,
+let the reader accept JSON-LD ProductGroup, implemented visit recording and the Add to cart reply,
+and refreshed README/requirements/testing/SUBMISSION. Checked with unit tests, tsc, fixtures:check
+and the smoke test; the live store run was done by the team on their own laptop.

@@ -20,4 +20,3 @@ the content script matches and the reader). Also add its name to the consent tex
 | junaidjamshed-com-matt-black-plain-peshawari-sandals-jpc21363gkpln | https://www.junaidjamshed.com/products/matt-black-plain-peshawari-sandals-jpc21363gkpln | JSON-LD ProductGroup, OG, .js | PASS |
 | outfitters-com-pk-f0283-113 | https://outfitters.com.pk/products/f0283-113 | JSON-LD ProductGroup, OG, .js | PASS |
 | zellbury-com-mock-neck-zipper-sweater-1005 | https://zellbury.com/products/mock-neck-zipper-sweater-1005 | JSON-LD ProductGroup, OG, .js | PASS |
-| beechtree-pk-bt12603un004720-green | (page saved is the homepage: og:url is https://beechtree.pk/) | none | FAIL: re-save or delete |

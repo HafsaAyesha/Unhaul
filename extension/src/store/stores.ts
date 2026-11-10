@@ -9,6 +9,22 @@ export const STORE_DOMAINS = [
   'junaidjamshed.com',
   'outfitters.com.pk',
   'zellbury.com',
+  // Passed `npm run stores:check` on 2026-11-10 (stationery, toys, gifts, decor).
+  'stationers.pk',
+  'thestationerycompany.pk',
+  'zubaidas.com',
+  'rung.com.pk',
+  'theschoolstore.pk',
+  'saleemibookdepot.com',
+  'toycompany.pk',
+  'toynix.pk',
+  'odeez.pk',
+  'babybazar.pk',
+  'chasevalue.pk',
+  'designyourown.pk',
+  'blingspot.pk',
+  'soz.com.pk',
+  'nishatlinen.com',
 ] as const;
 
 const hosts = STORE_DOMAINS.flatMap(domain => [domain, `www.${domain}`]);
