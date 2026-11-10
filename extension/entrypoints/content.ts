@@ -1,8 +1,10 @@
 import { browser } from 'wxt/browser';
-import { isPongMessage } from '../src/shared/messages';
+import { send, isPongMessage } from '../src/shared/messages';
 import { isSettings } from '../src/shared/storage-validation';
 import { STORAGE_KEYS } from '../src/storage/keys';
 import { createConsentLifecycle } from '../src/consent/lifecycle';
+import { createAnalysisClient } from '../src/classify/client';
+import { mountReflectionExperience } from '../src/ui/experience';
 
 export default defineContentScript({
   matches: ['https://www.daraz.pk/products/*'],
@@ -10,9 +12,12 @@ export default defineContentScript({
     const gate = createConsentLifecycle({
       requestConsent: () => browser.runtime.sendMessage({ type: 'GET_CONSENT' }),
       async start(scope) {
-        // Preserve the existing connectivity check only; product behavior is not implemented.
-        // Future UI/observers/listeners register cleanup through scope.onCleanup;
-        // fetch uses scope.signal and every async continuation checks scope.isCurrent().
+        // Product observers/UI are created only after the consent gate grants a scope.
+        if (typeof document !== 'undefined') {
+          const client = createAnalysisClient();
+          mountReflectionExperience({ scope, analyze: client.analyze, cancelAnalysis: client.cancel,
+            claimAutoOpen: async productId => (await send({ type: 'CLAIM_PANEL_OPEN', productId })).allowed });
+        }
         try {
           const reply: unknown = await browser.runtime.sendMessage({ type: 'PING' });
           if (!scope.isCurrent()) return;

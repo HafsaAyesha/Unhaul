@@ -1,15 +1,13 @@
-import { CATEGORIES, ITEM_TYPES, PURPOSES, type Category } from '../shared/lists';
+import { isClassification as validate } from '../shared/storage-validation';
+import { record } from '../shared/storage-validation';
 import type { Classification } from '../shared/types';
-
-/** True only when every value comes from the fixed lists (context.md section 7). */
-export function isClassification(value: unknown): value is Classification {
-  if (!value || typeof value !== 'object') return false;
-  const data = value as Record<string, unknown>;
-  if (!CATEGORIES.some(category => category === data.category)) return false;
-  const types = ITEM_TYPES[data.category as Category] as readonly string[];
-  return typeof data.itemType === 'string' && types.includes(data.itemType)
-    && PURPOSES.some(purpose => purpose === data.purpose)
-    && typeof data.confidence === 'number' && data.confidence >= 0 && data.confidence <= 1
-    && (data.source === 'ai' || data.source === 'keywords')
-    && typeof data.classifiedAt === 'number';
+export const isClassification = validate;
+/** Model output never controls source or timestamps. Reject rather than invent invalid taxonomy. */
+export function parseAIClassification(value: unknown, now = Date.now()): Classification | null {
+  if (!record(value)) return null;
+  const result = { category: value.category, itemType: value.itemType, purpose: value.purpose,
+    confidence: value.confidence, source: 'ai', classifiedAt: now };
+  if (!validate(result)) return null;
+  if (result.confidence < 0.5) return { category: 'other', itemType: 'other', purpose: 'other', confidence: result.confidence, source: 'ai', classifiedAt: now };
+  return result;
 }

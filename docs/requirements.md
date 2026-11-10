@@ -36,3 +36,23 @@ unfinished and return explicit errors. The gate currently controls only the exis
 connectivity check; it adds no product collection, shopping UI or network requests.
 Native browser verification is unrun. The earlier note that content consent gating
 was a separate task is superseded by this section.
+
+## Phase 6 status
+Implemented: title-first keyword rules, strong type matching with reasons/limit/count,
+background basic/refinement analysis messages, consent-aware atomic cache and stale
+result protection, proxy origin/rate/size/image validation and model request path.
+Unverified: live proxy/provider invocation, provider costs/latency, actual image
+classification and accuracy targets. Missing configuration/deployment prevents live
+AI validation. No real fixtures exist. Badge rendering and automatic product reading
+remain separate unfinished integration tasks; no new screens/stores were added.
+
+## Phase 7 status
+Implemented: consent-bound closed Shadow DOM badge/nonmodal panel, manual/interaction
+opening, current product and explained matches, prompt priority, session opening
+limits, stale-result handling, safe text, keyboard dismissal/focus and cleanup.
+A minimal structured reader connects the previously empty extractor for Daraz only.
+Unverified: live merchant metadata/cart behavior, native extension lifecycle and
+full real-store variant behavior. Synthetic Chromium tests are not live-site evidence.
+Deferred dependency: Save for later remains disabled with an explanation; Phase 8
+cooling-off persistence/UI is not implemented. AI remains unverified/unconfigured
+as described in Phase 6. No new stores or checkout interception were added.

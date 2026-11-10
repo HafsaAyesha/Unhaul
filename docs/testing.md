@@ -104,3 +104,41 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
 - Fixtures directory contains only README.md, so real-product alignment is pending.
 - Old sample IDs may coexist with the new set in existing installs; documented in
   README.md. No automatic migration or deletion was performed.
+
+## Phase 6 — 10 November 2026
+- Ran one integrated test pass: 8 files / 92 tests passed, no failures/skips, ~1.6 s.
+- Added 7 compact focused tests and 2 analysis/cache integration cases; updated an
+  existing product-handler expectation to basic analysis rather than NOT_IMPLEMENTED.
+- Extension typecheck and production build passed. Proxy typecheck and Wrangler
+  deployment dry-run passed, including the rate-limit binding. No deployment ran.
+- Checks cover title precedence, synonyms/word boundaries, type/purpose exclusion,
+  ranking/count/three-example cap, valid/invalid/low-confidence model replies,
+  offline/timeout/abort, public-only payloads, allowed origins, body size, image host
+  rejection/redirect refusal, rate-limit denial, vision payload construction, basic
+  response before AI, variant-specific caching, and late results after deletion.
+- Image bytes and provider replies in tests are synthetic/mocked; no real image
+  decoding, live AI inference, rate-limit enforcement, merchant page or Chrome UI
+  integration was verified. No real product fixtures exist. No accuracy claim.
+- Missing AI_API_KEY, PROXY_URL and allowed extension origin, plus no deployed
+  Worker, prevent live end-to-end validation. Keyword mode remains usable.
+
+## Phase 7 — 10 November 2026
+- Full suite: 9 files / 94 tests passed, no failures/skips (~1.5 s). Added only two
+  focused unit cases: prompt priority and serialized per-tab opening claims.
+- Focused integration recheck: reflection + storage messaging, 12 tests passed.
+- Extension typecheck and production build passed. Final permissions remain storage
+  and the existing Daraz host; no tabs permission or extra stores were added.
+- Ordinary headless Chromium synthetic smoke passed: narrow layout, closed Shadow
+  DOM, manual opening, Escape/focus restoration, Continue shopping, uncancelled
+  merchant button clicks, once-only automatic opening, no duplicate mount/analysis,
+  stale response rejection after product navigation, analysis failure/missing price,
+  safe untrusted title/owned-item text and observer/listener cleanup after revocation.
+- The harness uses intercepted synthetic Daraz-shaped HTML, synthetic owned items
+  and analysis/claim dependencies. The session-storage owner is covered by unit
+  tests; this is not native extension installation/storage proof or a real purchase.
+- Native extension/live Daraz cart/real variant checks remain unverified: managed
+  Chromium blocks extension loading, live store access was previously denied, and
+  real saved store fixtures are still absent. No order was placed.
+- Save for later remains disabled with explicit unavailable text; the Phase 8
+  cooling-off API/UI is not present. There is no fake save success.
+- Phase 6 AI remains unconfigured/unverified as documented; no deployment occurred.

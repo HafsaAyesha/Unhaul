@@ -4,10 +4,15 @@ import { DEFAULT_SETTINGS } from '../src/shared/types';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from '../src/storage/keys';
 import { sampleItems } from '../src/storage/sample-items';
 const local = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), remove: vi.fn() }));
-vi.mock('wxt/browser', () => ({ browser: { storage: { local } } }));
+vi.mock('wxt/browser', () => ({ browser: { storage: { local, session: {
+  get: async (key: string | null) => key === null ? { ...sessionData } : Object.hasOwn(sessionData, key) ? { [key]: sessionData[key] } : {},
+  set: async (values: Record<string, unknown>) => { Object.assign(sessionData, structuredClone(values)); },
+  remove: async (keys: string | string[]) => { for (const key of Array.isArray(keys) ? keys : [keys]) delete sessionData[key]; },
+} } } }));
 let data: Record<string, unknown>;
+let sessionData: Record<string, unknown>;
 beforeEach(() => {
-  vi.resetModules(); vi.resetAllMocks(); data = {};
+  vi.resetModules(); vi.resetAllMocks(); data = {}; sessionData = {};
   local.get.mockImplementation(async (keys: string | string[] | null) => Object.fromEntries(
     (keys === null ? Object.keys(data) : Array.isArray(keys) ? keys : [keys]).filter(key => Object.hasOwn(data, key))
       .map(key => [key, structuredClone(data[key])])));
@@ -229,4 +234,16 @@ it('rejects queued sensitive writes when deletion invalidates their generation',
   const deletion = repo.deleteAllUnhaulData();
   const [result] = await Promise.allSettled([write, deletion]);
   expect(result.status).toBe('rejected'); expect(data).toEqual({});
+});
+
+it('claims automatic panel opening once per product/tab and clears markers on deletion or tab close', async () => {
+  const { repo, claimPanelOpen, clearPanelSession } = await import('../src/storage/repo');
+  await expect(claimPanelOpen(1, 'p1')).rejects.toThrow('Consent');
+  await repo.setConsent(true);
+  expect(await Promise.all([claimPanelOpen(1, 'p1'), claimPanelOpen(1, 'p1')])).toEqual([true, false]);
+  expect(await claimPanelOpen(2, 'p1')).toBe(true);
+  expect(await claimPanelOpen(1, 'p2')).toBe(true);
+  await clearPanelSession(1);
+  expect(await claimPanelOpen(1, 'p1')).toBe(true);
+  await repo.deleteAllUnhaulData(); expect(sessionData).toEqual({});
 });

@@ -154,12 +154,26 @@ export function setClassificationCache(cache: ClassificationCache, work?: Consen
     await write(K.classificationCache, cache);
   });
 }
+/** Atomic cache upsert for background classification; never merge snapshots in a client. */
+export function cacheClassification(key: string, classification: import('../shared/types').Classification, work: ConsentWork): Promise<void> {
+  return queued(async () => {
+    requireValid(key, isNonemptyString, 'cache key');
+    requireValid({ [key]: classification }, isCache, 'classification cache');
+    const cache = await read(K.classificationCache, {}, isCache, 'classification cache');
+    await requireConsent(work.generation, work);
+    assertCurrentWork(work.generation, work);
+    await write(K.classificationCache, { ...cache, [key]: classification });
+  });
+}
 export function deleteAllUnhaulData(): Promise<void> {
   invalidateConsentWork();
   return queued(async () => {
     const data = await browser.storage.local.get(null);
     const keys = Object.keys(data).filter(key => key.startsWith('unhaul:') || key === LEGACY_ITEMS_KEY);
     if (keys.length) await browser.storage.local.remove(keys);
+    const session = await browser.storage.session.get(null);
+    const sessionKeys = Object.keys(session).filter(key => key.startsWith('unhaul:'));
+    if (sessionKeys.length) await browser.storage.session.remove(sessionKeys);
     // Reads return defaults without recreating keys. There is no in-memory classification cache.
   }, false);
 }
@@ -168,3 +182,23 @@ export const repo = {
   getSavedItems, setSavedItems, getVisits, setVisits,
   getClassificationCache, setClassificationCache, deleteAllUnhaulData,
 };
+
+/** Per-tab session markers survive MV3 worker suspension and document reloads. */
+export function claimPanelOpen(tabId: number, productId: string): Promise<boolean> {
+  const generation = currentConsentGeneration();
+  return queued(async () => {
+    if (!Number.isSafeInteger(tabId) || tabId < 0 || !productId || productId.length > 2048) throw new Error('Invalid panel session.');
+    const key = `unhaul:panel-open:${tabId}`;
+    const data = await browser.storage.session.get(key);
+    const ids: unknown = data[key] ?? [];
+    if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string')) throw new Error('Invalid panel session data.');
+    await requireConsent(generation);
+    assertCurrentWork(generation);
+    if (ids.includes(productId) || ids.length >= 500) return false;
+    await browser.storage.session.set({ [key]: [...ids, productId] });
+    return true;
+  });
+}
+export function clearPanelSession(tabId: number): Promise<void> {
+  return queued(() => browser.storage.session.remove(`unhaul:panel-open:${tabId}`), false);
+}

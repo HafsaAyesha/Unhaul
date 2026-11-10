@@ -4,15 +4,16 @@ stationery, home décor, toys, electronics, clothing and more.
 
 ## Status
 Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
-classification, basic matching and installation consent onboarding exist. Store extraction,
-reflection integration, saving/timers and AI classification remain to be built.
+classification, matching and installation consent onboarding exist. Structured product
+reading and reflection UI are implemented for the existing Daraz scope; live store
+verification is pending. Saving/timers remain to be built. AI refinement is implemented but disabled until the proxy is configured and deployed.
 Daraz Pakistan is the Phase 2 target. Production host access is restricted to
 `https://www.daraz.pk/*`, with content injection only on `/products/*`.
-The content script asks for consent first and performs its PING/PONG connectivity
-check only after literal true consent. It stops on revocation and resumes after
-agreement in an already-open supported tab.
+The content script reads products and mounts a reflection badge/panel only after
+literal true consent. It stops on revocation and resumes after agreement in an
+already-open supported tab. PING/PONG remains a diagnostic.
 Live store extraction is not verified.
-No product tracking or external AI calls are currently enabled.
+Automatic visit recording is not enabled; external AI calls are disabled without proxy configuration.
 
 ## Development
 Use the existing checkout; no extra worktree is needed. Node.js 22.12+ recommended.
@@ -80,3 +81,56 @@ may leave 14 records, including semantically similar old/new samples. No automat
 migration or deletion is performed in this sample-data task. The existing Delete
 all data action removes all Unhaul data if a fresh demo is wanted; it also removes
 consent and user-created records, so it is not a selective sample reset.
+
+## Classification and matching (Phase 6)
+PRODUCT_SEEN returns basic keyword analysis immediately. REFINE_PRODUCT uses its
+analysisId for optional AI refinement. The Phase 7 badge/panel uses
+`extension/src/classify/client.ts` to publish basic results first, then current AI
+results, discarding replies after navigation/variant changes or consent revocation.
+Phase 7 connects this helper to the structured reader and reflection UI.
+
+Matching returns at most three explained same-type examples and the full match
+count, excluding known conflicting purposes and broad-category-only similarity.
+AI results use versioned product/variant cache keys and expire after 24 hours;
+timeouts/offline/invalid replies use uncached keyword fallback so later requests
+can retry. The background owns all analysis/cache operations and enforces consent.
+
+See proxy/README.md for the server-side key, fixed model, exact origin/CDN allowlists,
+rate limiting and PROXY_URL build setup. No live AI/deployment/accuracy result is
+claimed. No real product fixtures have been added.
+
+## Reflection UI (Phase 7)
+After consent, recognized Daraz product pages show a small badge. Click it manually
+or interact with Add to cart to open a nonmodal reflection panel. Continue shopping,
+the dismiss button, or Escape closes it. Merchant clicks/submits are not cancelled
+or modified. The panel displays current structured title/price, explained matches
+and one rule-selected question. Missing price/currency is shown as unavailable.
+
+Save for later is visibly disabled with an explanation: Phase 8 is unfinished.
+No save confirmation, stock reservation, price guarantee or cart change is claimed.
+
+Automatic opening is limited once per product per actual tab session. Background
+storage.session markers survive document reloads and worker suspension, are shared
+across frames in a tab, and clear on tab close, browser restart, extension reload/update or Delete all data.
+Variants of the same product share the limit; manual opening remains available.
+After 500 distinct products in one tab, further automatic opening is denied.
+
+The minimal structured reader uses Product JSON-LD or product Open Graph metadata;
+no guessed merchant DOM selectors are used. It rejects contradictory canonical URLs
+and waits for metadata changes on path navigation. Variant prices require matching
+SKU offers; otherwise the price stays unavailable. Existing recorded history can
+select the repeat-visit prompt (prior visit 30 minutes–30 days old); this phase does
+not add automatic visit recording. Unknown/unrecognized pages show no shopping UI.
+
+A synthetic ordinary-Chromium smoke check passed; this is not a live Daraz or native
+extension-installation check. Real store fixtures are still absent. See testing.md
+and the repeatable harness commands below:
+
+```sh
+cd extension
+./node_modules/.bin/esbuild scripts/reflection-smoke-harness.ts --bundle --format=iife --global-name=UnhaulHarness --outfile=/tmp/unhaul-reflection-harness.js
+node scripts/reflection-smoke.mjs
+```
+
+The harness injects fake analysis/claims into intercepted synthetic pages only. It
+is not an extension entrypoint and is not bundled in the production extension.

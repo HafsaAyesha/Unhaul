@@ -3,12 +3,14 @@ import { storageClient } from '../../src/storage/client';
 import { STORAGE_KEYS } from '../../src/storage/keys';
 import { createOptionsController } from './controller';
 import './style.css';
+import { proxyConfig } from '../../src/classify/config';
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const consent = element<HTMLElement>('consent');
 const app = element<HTMLElement>('app');
 const status = element<HTMLElement>('status');
 const error = element<HTMLElement>('error');
 const retry = element<HTMLButtonElement>('retry');
+if (proxyConfig().url) element('ai-state').textContent = 'This build is configured to request AI classification. When available, refinement sends the public product information described above; failures use local keyword matching.';
 let previousScreen = 'loading';
 const controller = createOptionsController(storageClient, state => {
   const focusHidden = (app.contains(document.activeElement) && state.screen !== 'items')

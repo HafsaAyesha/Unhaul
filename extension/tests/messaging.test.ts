@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage, getSettings: mocks.getSettings }));
 vi.mock('wxt/browser', () => ({ browser: {
-  storage: { onChanged: { addListener: mocks.changed, removeListener: mocks.removeChanged } },
+  tabs: { onRemoved: { addListener: vi.fn() } },
+  storage: { session: { get: async () => ({}), set: async () => {}, remove: async () => {} }, onChanged: { addListener: mocks.changed, removeListener: mocks.removeChanged } },
   runtime: { openOptionsPage: mocks.openOptionsPage, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
 } }));
 vi.stubGlobal('defineBackground', (main: () => void) => main);

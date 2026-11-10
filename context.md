@@ -79,12 +79,12 @@ Read in this order, and leave a field empty (null) if no source has it. Never gu
 
 **Why AI is needed:** general stores sell thousands of kinds of items with messy titles ("Aesthetic Vintage Kraft Diary 200 Pages with Lock", "TWS Bluetooth 5.3 Earphones Pro"). Keyword rules miss most of them and can't tell that a diary and a journal serve the same purpose. A model reading the title and image can map almost any product to our fixed lists.
 
-- **Model:** a small, fast, image-capable model (for example Claude Haiku 5.5), called only through the proxy.
+- **Model:** OpenAI gpt-4o-mini (text/image input confirmed from the official cookbook), called only through the proxy; live account/provider access remains unverified.
 - **Sends:** only public product info: title, category text, image URL. Never owned items, visits or anything personal. The consent screen says this.
 - **Returns:** JSON with category, itemType, purpose, confidence, all from section 9's lists.
 - **Validation:** must parse; every value must be in the lists; confidence under 0.5 means Other / unknown; invalid fields use the keyword value.
 - **Fallback:** 3 s timeout, offline or invalid means keyword rules. The panel always still works.
-- **Cache:** one classification per product ID, stored with source (ai or keywords).
+- **Cache:** successful AI classifications use classifier/model-version + store/origin/product/variant keys and a 24-hour TTL. Temporary failures use uncached keywords and can retry.
 - **Proxy:** Cloudflare Worker, `POST /classify`. Checks the extension token, rejects bodies over 2 KB, about 30 requests per minute per IP, no body logging. Key stored with `wrangler secret`. Spending cap set on the AI account.
 - **Proof:** about 40 hand-labelled products in `tests/labels.json` across categories. Report AI and keyword accuracy plus median and slowest AI time in docs/testing.md. Target: AI at least 80% on item type and at least 15 points above keywords. Report honestly if it misses.
 
@@ -185,3 +185,5 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Install-only onboarding and options gating use persisted explicit consent; deletion returns to consent | User requested installation consent phase; product observation and content-script consent enforcement remain separate |
 | 2026-11-10 | Consent gate fails closed in content and background; revocation invalidates async work across deletion/re-agreement | Requested Phase 4; unfinished product operations return explicit errors and must use the documented scope/commit guard |
 | 2026-11-10 | Ten fictional samples use sample-01 through sample-10; add cap to the existing taxonomy | Requested Phase 5; two samples per category, preserve loader and user data; fixture alignment remains pending |
+| 2026-11-10 | Phase 6 uses optional gpt-4o-mini vision via Worker, immediate basic plus separate refinement, versioned AI-only cache | Official modality verified; live credentials/deployment unavailable. Purpose conflicts excluded; UI/product-reader integration remains separate |
+| 2026-11-10 | Phase 7 connects structured Daraz metadata to a consent-bound reflection UI; automatic opening markers use background storage.session per tab/product | Reader was empty; no extra stores or permissions added. Saving is explicitly disabled until Phase 8; synthetic browser verification only |

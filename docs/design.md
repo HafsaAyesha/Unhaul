@@ -121,3 +121,66 @@ incremental visits/cache updates rather than read-modify-write snapshot messages
 AI, actual product extraction, UI cleanup with real mounted shopping components and
 native Chrome behavior remain unverified/unfinished; this task provides their guard
 and lifecycle integration points rather than pretending those features exist.
+
+## Phase 6 classification and matching
+Keyword rules use shared taxonomy, whole-word matching and longest phrases, checking
+the title before broad public metadata. Unknown remains other/other. Matching uses
+same category and specific type; a known conflicting purpose excludes a candidate.
+Matching-purpose candidates rank first, then stable input order. Only strong type
+matches are returned, capped at three, with reasons; totalMatches is uncapped.
+
+The background analysis service handles PRODUCT_SEEN (basic/cached analysis) and
+REFINE_PRODUCT (optional model result/fallback). Response validation covers taxonomy,
+match records, count and phase. A per-document/frame session plus analysisId prevents
+superseded variant replies. Sessions are bounded and expire on subsequent requests;
+MV3 restart can discard sessions, in which case clients request basic analysis again.
+The content analysis helper ignores late revisions/signals and publishes basic first.
+It is an integration helper, not a product reader or mounted UI. Repeat visits and
+expanded discount prompts remain outside this phase.
+
+Before analysis and outbound calls the background checks current consent; it verifies
+again before publishing and committing. Atomic cacheClassification joins the existing
+queue and checks the same work token at commit. Revocation/deletion aborts scopes;
+old results cannot repopulate data even after re-agreement. Each session permits one
+in-flight refinement. Cached AI keys include classifier/model version, origin, store,
+product ID and variant ID. AI entries expire after 24 hours; temporary failures are
+not cached. Full-snapshot UI cache mutation is not used by analysis.
+
+Worker/provider setup and security boundaries are in proxy/README.md. Only public
+title/category text/image leave the background. Public CDN image bytes are validated
+and relayed as data, avoiding provider URL fetching. The API key remains server-side;
+public extension tokens and Origin headers are not durable authentication.
+
+## Phase 7 reflection experience
+The consent lifecycle now mounts the structured reader/UI, registering all cleanup
+through its scope. No product/UI observers are registered before agreement. A single
+closed Shadow DOM host contains a small badge and nonmodal dialog; text is assigned
+through textContent, with no product/user HTML injection. Keyboard Escape closes the
+panel, visible focus is styled, and dismissal restores the trigger when connected.
+The panel is responsive and scrollable; it does not trap focus or block checkout.
+
+A throttled mutation observer, variant input/change listeners and URL-change checks
+update product snapshots. Path changes immediately discard old UI/analysis and wait
+for changed metadata. The reader rejects canonical mismatches, parses JSON-LD first
+and product OG second, and leaves unsupported/missing prices empty. Variants require
+SKU-specific offer evidence for price. This minimum reader replaced the extraction
+placeholder solely to connect the existing Daraz scope; it has no live-store proof.
+
+Generation checks and the Phase 6 client reject old publications; revocation/invalidated
+contexts remove the host, disconnect observers, clear timers, remove all event
+listeners, cancel client publications and abort consent scopes. The host is reattached
+if a merchant rerender removes it; duplicate roots/analysis are avoided.
+
+Capture listeners observe cart-labelled buttons/form submitters without cancelling
+or stopping merchant events. They represent interaction intent, not purchase/cart
+success. Background claimPanelOpen serializes consent-guarded storage.session claims
+per tab/product. They survive reload/worker suspension, clear on tab close/restart
+or delete-all, and conservatively deny new claims beyond 500 product IDs. No new
+manifest permission is required for tabs.onRemoved; no URL/title tab access is used.
+
+Prompt order: relevant matches, verified higher previous price with known currency,
+recorded repeat visit, generic. Existing visit history is read only; there is no new
+visit recording. UI error/loading states do not invent counts. Save remains disabled
+with explicit text because the cooling-off API/UI is not implemented. No success
+message is shown. Product images are optional public URLs with no-referrer policy;
+owned-item names/reasons remain text inside the closed shadow root.
