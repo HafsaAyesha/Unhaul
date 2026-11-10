@@ -1,21 +1,23 @@
 // src/storage/storage.ts
-// All user data stays in chrome.storage.local. Nothing here touches the network.
+// All user data stays in browser.storage.local. Nothing here touches the network.
+import { browser } from 'wxt/browser';
 import { KEYS } from './keys';
+import { DEFAULT_SETTINGS } from '../shared/types';
 import type { Settings, OwnedItem, SavedItem, Visit, Classification } from '../shared/types';
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 async function read<T>(key: string, fallback: T): Promise<T> {
-  const r = await chrome.storage.local.get(key);
+  const r = await browser.storage.local.get(key);
   return (r[key] as T | undefined) ?? fallback;
 }
 
 async function write<T>(key: string, value: T): Promise<void> {
-  await chrome.storage.local.set({ [key]: value });
+  await browser.storage.local.set({ [key]: value });
 }
 
 // Settings
-export const DEFAULT_SETTINGS: Settings = { schemaVersion: 1, consentGiven: false };
+export { DEFAULT_SETTINGS };
 
 export function getSettings(): Promise<Settings> {
   return read(KEYS.settings, DEFAULT_SETTINGS);
@@ -74,5 +76,5 @@ export async function setCachedClass(productId: string, c: Classification): Prom
 
 // Delete everything: items, saved list, visits, cache and settings (consent resets).
 export async function deleteAll(): Promise<void> {
-  await chrome.storage.local.clear();
+  await browser.storage.local.clear();
 }
