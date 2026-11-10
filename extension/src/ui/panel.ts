@@ -19,15 +19,21 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   panel.className = 'panel'; panel.hidden = true; panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'false'); panel.setAttribute('aria-labelledby', 'unhaul-heading');
   const header = document.createElement('header');
+  const headingGroup = document.createElement('div');
+  const brand = document.createElement('small'); brand.textContent = 'Unhaul';
   const heading = document.createElement('h2'); heading.id = 'unhaul-heading'; heading.textContent = 'A moment to reconsider';
   const close = document.createElement('button'); close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', 'Dismiss Unhaul'); close.addEventListener('click', onClose);
-  header.append(heading, close);
+  headingGroup.append(brand, heading); header.append(headingGroup, close);
+  const product = document.createElement('div'); product.className = 'product';
+  const productVisual = document.createElement('div'); productVisual.className = 'product-visual';
+  const productInfo = document.createElement('div'); productInfo.className = 'product-info';
   const title = document.createElement('h3');
   const price = document.createElement('p');
   const image = document.createElement('img'); image.alt = ''; image.referrerPolicy = 'no-referrer'; image.crossOrigin = 'anonymous'; image.loading = 'lazy';
   image.addEventListener('error', () => { image.hidden = true; });
+  productVisual.append(image); productInfo.append(title, price); product.append(productVisual, productInfo);
   const state = document.createElement('p'); state.setAttribute('role', 'status');
-  const matches = document.createElement('ul');
+  const matches = document.createElement('ul'); matches.className = 'matches';
   const basic = document.createElement('p'); basic.className = 'muted'; basic.textContent = 'Basic matching'; basic.hidden = true;
   const question = document.createElement('p'); question.className = 'question';
   const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save for later'; save.disabled = !saveProduct; save.setAttribute('aria-describedby', 'unhaul-save-note');
@@ -67,7 +73,9 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   });
   const continueButton = document.createElement('button'); continueButton.type = 'button'; continueButton.textContent = 'Continue shopping'; continueButton.addEventListener('click', onClose);
   const cartNote = document.createElement('p'); cartNote.className = 'muted'; cartNote.textContent = 'Unhaul does not change the store’s cart, reserve stock or lock prices.';
-  panel.append(header, title, price, image, state, matches, basic, question, durationLabel, save, continueButton, saveNote, cartNote);
+  const saveAction = document.createElement('div'); saveAction.className = 'save-action'; saveAction.append(save, durationLabel);
+  const actions = document.createElement('div'); actions.className = 'actions'; actions.append(saveAction, continueButton);
+  panel.append(header, product, state, question, matches, basic, actions, saveNote, cartNote);
   return {
     element: panel, closeButton: close,
     dispose() { disposed = true; revision++; },
@@ -93,7 +101,10 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
       state.textContent = error ? 'Analysis is unavailable. You can still take a moment to reflect.'
         : !analysis ? 'Checking your items…' : analysis.totalMatches ? `${analysis.totalMatches} similar item(s) in My Items.` : 'No reliable match found in My Items.';
       const rows = (analysis?.matches ?? []).slice(0, 3).map(match => {
-        const row = document.createElement('li'); row.textContent = `${match.item.name} — ${match.reason}`; return row;
+        const row = document.createElement('li');
+        const owned = document.createElement('span'); owned.textContent = `You already own: ${match.item.name}`;
+        const reason = document.createElement('span'); reason.className = 'muted'; reason.textContent = match.reason;
+        row.append(owned, reason); return row;
       });
       matches.replaceChildren(...rows);
       // Keyword results (no AI yet, or AI unavailable) are labelled so the user knows they are basic.

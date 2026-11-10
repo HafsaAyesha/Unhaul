@@ -91,3 +91,7 @@ per-phase build notes into design.md, added the NFR table to requirements.md, a 
 edge-case table to testing.md, filled judge-checks.md and SUBMISSION.md, ran `npx wxt zip` and inspected
 the ZIP (storage only, 21 store domains, no secrets). Searched tracked files and full git history for keys:
 no hits. The team reviewed and merged the pull requests.
+
+## Dashboard — 2026-11-10
+Copilot generated the read-only options dashboard and focused aggregation tests; typecheck, unit tests and build were run.
+Copilot was used to polish the reflection panel and badge styling; existing UI tests and extension checks were rerun.

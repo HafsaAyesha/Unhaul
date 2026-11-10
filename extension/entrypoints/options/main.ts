@@ -2,6 +2,7 @@ import { browser } from 'wxt/browser';
 import { storageClient } from '../../src/storage/client';
 import { STORAGE_KEYS } from '../../src/storage/keys';
 import { createSavedList } from './saved-list';
+import { createDashboard } from './dashboard';
 import { createOptionsController, label } from './controller';
 import { CATEGORIES, ITEM_TYPES, PURPOSES, type Category, type ItemType, type Purpose } from '../../src/shared/lists';
 import './style.css';
@@ -27,6 +28,7 @@ const fillTypes = () => {
 categorySelect.addEventListener('change', fillTypes);
 fillTypes();
 let savedList = createSavedList(element('saved-list'), storageClient);
+let dashboard = createDashboard(element('dashboard'), storageClient);
 let previousScreen = 'loading';
 const controller = createOptionsController(storageClient, state => {
   const focusHidden = (app.contains(document.activeElement) && state.screen !== 'items')
@@ -34,6 +36,7 @@ const controller = createOptionsController(storageClient, state => {
   consent.hidden = state.screen !== 'consent';
   app.hidden = state.screen !== 'items';
   savedList.setEnabled(state.screen === 'items' && !state.busy);
+  dashboard.setEnabled(state.screen === 'items' && !state.busy);
   retry.hidden = state.screen !== 'error';
   status.textContent = state.status;
   error.hidden = !state.error;
@@ -93,14 +96,23 @@ retry.addEventListener('click', () => { void controller.refresh(); });
 const onStorageChanged: Parameters<typeof browser.storage.onChanged.addListener>[0] = (changes, area) => {
   if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.settings)) {
     controller.settingsChanged(changes[STORAGE_KEYS.settings].newValue);
-  } else if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.saved)) {
+  }
+  if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.saved)) {
     void savedList.refresh();
+    void dashboard.refresh();
+  }
+  if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.items)) {
+    void dashboard.refresh();
   }
 };
 browser.storage.onChanged.addListener(onStorageChanged);
 void controller.refresh();
 
-window.addEventListener('pagehide', () => savedList.dispose());
+window.addEventListener('pagehide', () => { savedList.dispose(); dashboard.dispose(); });
 window.addEventListener('pageshow', event => {
-  if (event.persisted) { savedList = createSavedList(element('saved-list'), storageClient); void controller.refresh(); }
+  if (event.persisted) {
+    savedList = createSavedList(element('saved-list'), storageClient);
+    dashboard = createDashboard(element('dashboard'), storageClient);
+    void controller.refresh();
+  }
 });

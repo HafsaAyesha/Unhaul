@@ -23,3 +23,8 @@ button:disabled { cursor: wait; opacity: .65; }
 
 .saved-image-placeholder { width: 64px; height: 64px; background: #d9dedb; border-radius: 6px; }
 .saved-intro { font-weight: 600; }
+
+.dashboard-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.dashboard-tile { background: #eef2ed; border: 1px solid #ccd6d0; border-radius: 8px; padding: 12px; }
+.dashboard-tile h3 { margin: 0; font-size: .95rem; }
+.dashboard-tile strong { display: block; font-size: 1.5rem; color: #203c35; }
