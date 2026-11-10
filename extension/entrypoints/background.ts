@@ -77,7 +77,7 @@ export default defineBackground(() => {
         return;
       }
       if (message.type === 'SAVE_ITEM') {
-        void saveProduct(message.product, message.wait).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
+        void saveProduct(message.product, message.wait, message.devTestWait === true).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
         return true;
       }
       if (message.type === 'PRODUCT_SEEN' || message.type === 'REFINE_PRODUCT') {

@@ -22,3 +22,12 @@ describe('final display rules', () => {
     expect(remainingLabel(item(10_000), 10_000)).toBe('Ready to decide');
   });
 });
+
+import { isProductRequest } from '../src/shared/messages';
+import { EXAMPLE_PRODUCT as exampleProduct } from '../src/shared/examples';
+describe('dev-only 1-minute wait', () => {
+  it('accepts devTestWait in dev builds and still requires a normal wait key', () => {
+    expect(isProductRequest({ type: 'SAVE_ITEM', product: exampleProduct, wait: '24h', devTestWait: true })).toBe(import.meta.env.DEV);
+    expect(isProductRequest({ type: 'SAVE_ITEM', product: exampleProduct, wait: '1m', devTestWait: true })).toBe(false);
+  });
+});

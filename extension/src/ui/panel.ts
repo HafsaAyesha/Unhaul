@@ -8,7 +8,8 @@ export interface PanelView {
   dispose(): void;
   update(product: Product, analysis: AnalysisResult | null, error: boolean): void;
 }
-export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey) => Promise<SaveResult>): PanelView {
+const DEV_TEST_OPTION = 'dev-1m';
+export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey, devTestWait?: boolean) => Promise<SaveResult>): PanelView {
   let currentProduct: Product | null = null;
   let productSignature = '';
   let revision = 0;
@@ -35,17 +36,22 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   for (const key of Object.keys(WAITS) as WaitKey[]) {
     const option = document.createElement('option'); option.value = key; option.textContent = WAIT_LABELS[key]; duration.append(option);
   }
+  // Dev builds only: a 1-minute wait for testing Ready and restarts. Not in WAITS, absent from production.
+  if (import.meta.env.DEV) {
+    const option = document.createElement('option'); option.value = DEV_TEST_OPTION; option.textContent = '1 minute (dev test)'; duration.append(option);
+  }
   durationLabel.append(duration);
   const saveNote = document.createElement('p'); saveNote.id = 'unhaul-save-note'; saveNote.setAttribute('role', 'status'); saveNote.textContent = saveProduct ? '' : 'Save for later is not available in this build yet. Nothing will be saved.';
   save.addEventListener('click', async () => {
     if (!saveProduct || !currentProduct || saving || disposed) return;
     const current = revision;
     const snapshot = structuredClone(currentProduct);
-    const wait = duration.value as WaitKey;
+    const devTestWait = import.meta.env.DEV && duration.value === DEV_TEST_OPTION;
+    const wait = (devTestWait ? '24h' : duration.value) as WaitKey;
     saving = true; save.disabled = true; duration.disabled = true; save.textContent = 'Saving…';
     saveNote.setAttribute('role', 'status'); saveNote.textContent = 'Saving in Unhaul…';
     try {
-      const result = await saveProduct(snapshot, wait);
+      const result = devTestWait ? await saveProduct(snapshot, wait, true) : await saveProduct(snapshot, wait);
       if (disposed || current !== revision) return;
       saveNote.textContent = result.result === 'already_saved'
         ? 'Already saved in Unhaul. Your original deadline is unchanged. This does not change the store’s cart.'
