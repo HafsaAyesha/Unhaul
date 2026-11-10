@@ -83,3 +83,11 @@ Chromium fixture check), moved the store list to `src/store/stores.ts`, added th
 let the reader accept JSON-LD ProductGroup, implemented visit recording and the Add to cart reply,
 and refreshed README/requirements/testing/SUBMISSION. Checked with unit tests, tsc, fixtures:check
 and the smoke test; the live store run was done by the team on their own laptop.
+
+## Release prep — 2026-11-10 (Claude Code)
+Fixed final display gaps (PR #10: PKR price formatter, badge wording, Basic matching label, countdown
+wording, saved-list layout) with 2 new unit tests. Rewrote README under the template headings, moved the
+per-phase build notes into design.md, added the NFR table to requirements.md, a current-status and
+edge-case table to testing.md, filled judge-checks.md and SUBMISSION.md, ran `npx wxt zip` and inspected
+the ZIP (storage only, 21 store domains, no secrets). Searched tracked files and full git history for keys:
+no hits. The team reviewed and merged the pull requests.
