@@ -93,7 +93,7 @@ npx wrangler secret put EXTENSION_TOKEN
 npx wrangler deploy
 ```
 
-Before deploying, set `ALLOWED_ORIGINS` in `proxy/wrangler.toml` to your extension's `chrome-extension://` origin. See `proxy/README.md` for the full steps.
+`ALLOWED_ORIGINS` in `proxy/wrangler.toml` is already set to the extension's fixed ID (`chrome-extension://poclfboelhiknbalppadihkdciclhlha`, pinned by the public `key` in `wxt.config.ts`). Then build the extension with the proxy URL: `PROXY_URL=https://<your-worker>.workers.dev EXTENSION_TOKEN=<same token> npm run zip`. See `proxy/README.md` for details.
 
 ### Run tests
 
@@ -130,6 +130,6 @@ In `proxy/`: `npx tsc --noEmit`.
 
 | Name | Role |
 |------|------|
-| TBD (A) | Store pages: product reader, visits, Add to cart watching, badge and panel, fixtures |
-| TBD (B) | AI and matching: shared contracts, keywords, AI proxy, matching, questions, accuracy |
-| TBD (C) | App and data: storage, consent, My Items, cooling-off list, release ZIP |
+| Hafsa Ayesa (A) | Store pages: product reader, visits, Add to cart watching, badge and panel, fixtures |
+| Amna Farooq (B) | AI and matching: shared contracts, keywords, AI proxy, matching, questions, accuracy |
+| Ummara Amin (C) | App and data: storage, consent, My Items, cooling-off list, release ZIP |
