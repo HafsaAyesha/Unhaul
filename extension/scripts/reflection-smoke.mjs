@@ -56,7 +56,7 @@ try {
   await page.evaluate(() => window.h.finishSlow());
   await page.waitForTimeout(150);
   assert.equal(await page.evaluate(() => window.h.root.querySelector('h3').textContent), 'Wireless headphones');
-  assert.match(await page.evaluate(() => window.h.root.querySelector('.panel').textContent), /Price unavailable/);
+  assert.equal(await page.evaluate(() => window.h.root.querySelector('.panel h3 + p').textContent), '');
   await changeProduct('Broken notebook', '/products/broken-i4.html');
   await page.waitForFunction(() => window.h.root?.querySelector('.badge')?.textContent.includes('unavailable'));
   assert.match(await page.evaluate(() => window.h.root.querySelector('.panel').textContent), /Analysis is unavailable/);

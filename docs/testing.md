@@ -197,3 +197,38 @@ Only four unchanged labels; not a general benchmark. Their referenced captures a
 - Keyword miss retained: “Monochrome Theme Magnetic Notepads For Fridge” → other/other;
   expected stationery/notebook. No captured real title supports adding that plural
   in this task. Live AI requests: zero; timings and AI accuracy remain unmeasured.
+
+## Edge cases
+
+Phase 9 audit baseline `6787040`, 10 November 2026. “Manual” means unverified in this
+run; named tests are existing coverage, not newly written. The full audit and
+incoming-main caveat are in [integration-audit.md](integration-audit.md).
+
+| Edge case | Existing coverage or manual |
+|---|---|
+| Product with no price | `tests/core.test.ts` — “keeps the example records consistent with the contracts”; `tests/storage.test.ts` — “saves exact durations, reloads persisted deadlines, and derives Ready at the boundary” covers null snapshot persistence. UI rendering **manual** (existing `scripts/reflection-smoke.mjs:58` assertion, not run here). |
+| Page that isn't a product | **Manual**. Existing `scripts/smoke-extension.mjs:60` has a synthetic nonproduct route; no Vitest extraction test. |
+| Moving to another product without reload | **Manual**. Existing `scripts/reflection-smoke.mjs:47` changes URL/metadata and checks late results; not a named Vitest test, not run. |
+| AI slow/offline/invalid reply | `tests/phase6.test.ts` — “AI requests send public fields only and gracefully handle valid, invalid and offline results”; “bounds a nonresponding AI client and handles caller cancellation”; `tests/storage-messaging.test.ts` — “returns basic analysis before AI and reuses atomic AI cache across requests but not variants”. Mocked, not real provider. |
+| Same product saved twice while waiting | `tests/storage.test.ts` — “serializes variant-aware duplicate saves and preserves immutable decisions on resave”. |
+| Chrome restarted during wait | **Manual**. “saves exact durations, reloads persisted deadlines, and derives Ready at the boundary” in `tests/storage.test.ts` reloads a module, not Chrome. |
+| Consent withdrawn/Delete all with store page open | `tests/consent-lifecycle.test.ts` — “discards consent replies after revocation and can safely start on later agreement”; `tests/storage-messaging.test.ts` — “discards a pending AI result after deletion/re-agreement without repopulating the cache”; native open tab **manual**. |
+| Load sample items clicked twice | `tests/storage.test.ts` — “merges concurrent samples/adds without duplicates or lost manual records”; actual double UI interaction **manual**. |
+| Item type other or only weak evidence | `tests/core.test.ts` — “does not match unknown products”; `tests/phase6.test.ts` — “ranks purpose support, excludes conflicts and broad categories, caps examples but preserves count”. |
+| Product title containing an HTML script tag | **Manual**. `src/ui/panel.ts:73` uses textContent; existing `scripts/reflection-smoke.mjs:25` checks an img/onerror-shaped title, not an actual script-tag title; not run here. |
+| Add to cart still works with panel open | **Manual**. Existing `scripts/reflection-smoke.mjs:33` checks uncancelled clicks but closes before the second click; it does not prove this exact live-store scenario. |
+
+### Phase 9 one-pass validation
+
+On baseline `6787040` plus the two missing-price text fixes:
+- Extension `npx tsc --noEmit`: passed.
+- Extension `npx vitest run`: 9 files / 101 tests passed, zero failures (~1.22 seconds).
+- Extension `npm run build`: passed; production MV3 manifest has storage only,
+  12 exact HTTPS host patterns, no all_urls/tabs/scripting. PROXY_URL unset, so no
+  proxy host was included; configured proxy build remains unverified.
+- Proxy `npx tsc --noEmit`: passed.
+- No browser smoke script, native extension, live merchant or live AI run.
+- The existing smoke-script unknown-price assertion was aligned after this run;
+  it was not executed. No new tests were written and no full-suite rerun was made.
+- Main advanced to `68eb093` during the audit; its visit/cart/domain changes were
+  read but not merged or claimed as validated. See incoming-main note in the audit.

@@ -74,7 +74,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
       if (product.price !== null && product.currency) {
         try { price.textContent = new Intl.NumberFormat('en-PK', { style: 'currency', currency: product.currency }).format(product.price); }
         catch { price.textContent = `${product.currency} ${product.price}`; }
-      } else price.textContent = 'Price unavailable';
+      } else price.textContent = ''; // Unknown price/currency: no placeholder amount.
       if (product.imageUrl) {
         // Reader validates URLs; still check before assigning a resource attribute.
         try {

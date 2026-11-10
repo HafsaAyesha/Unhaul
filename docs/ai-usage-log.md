@@ -78,3 +78,13 @@ AI assistance added fixture-backed sweater → outerwear and wallet → bag syno
 retained matchItems because core.test.ts uses it, corrected AI documentation and
 added an unchanged-label diagnostic and accuracy CLI. No upstream/provider changes,
 labels edited or credentials added. Measured results are in testing.md.
+
+## Phase 9 integration audit — 2026-11-10
+AI assistance audited baseline 6787040 on phase9-integration, enumerated requirements,
+network flows, native storage subscriptions and existing edge-case coverage. Searched
+all fetched reachable blob/message history for the requested secret terms, preserving
+locations but never copying credential values into reports. Made only two unknown-price
+text fixes and aligned the existing smoke assertion. No new tests or feature work.
+One full validation pass: 101 tests, extension/proxy tsc and extension build passed.
+Main advanced during the run; incoming fixes are explicitly separated from checked
+results. No live AI/native Chrome/merchant verification or history rewrite.

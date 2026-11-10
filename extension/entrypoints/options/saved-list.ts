@@ -43,7 +43,7 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
     if (item.product.price !== null && item.product.currency) {
       try { price.textContent = new Intl.NumberFormat('en-PK', { style: 'currency', currency: item.product.currency }).format(item.product.price); }
       catch { price.textContent = `${item.product.currency} ${item.product.price}`; }
-    } else price.textContent = 'Price unavailable';
+    } else price.textContent = ''; // Unknown price/currency: no placeholder amount.
     const saved = doc.createElement('p'); saved.textContent = `Saved ${new Date(item.savedAt).toLocaleString()}`;
     const clock = doc.createElement('p'); clock.className = 'saved-time'; labels.push({ node: clock, item });
     const deadline = doc.createElement('p'); deadline.textContent = `Reconsider ${new Date(item.reconsiderAt ?? item.deadline).toLocaleString()}`;
