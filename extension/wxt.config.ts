@@ -17,6 +17,9 @@ export default defineConfig({
   manifest: {
     name: 'Unhaul',
     description: 'Pause before impulse purchases across product categories.',
+    // Public key only (not a secret): fixes the extension ID to poclfboelhiknbalppadihkdciclhlha for every
+    // unpacked install, so the proxy's ALLOWED_ORIGINS can name it. No private key is kept or needed.
+    key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0NZ1Yi1+xZib2JzzoBreJ8nZHBXFMtmKVOKZq/jVU+7LJXELlcXMpCmQ3lRjoka+CPK2kHWEwk6WYCgUNKEsLCIpcuOO2Mi3aUJma4Us3A/invVM6pmtQwHhSfXctj/K8fFpU4ZUDyKdJZY/LAK3HbzccGWFb8EvU5MEWZi6aAjaeDcvl1qgpZ4PoTQUcBtWiKSt9ae/lxONrRKmln8IWYpmUoiFfmPFGBD1rwqTnsW6Nt0/kKPgfFYcNM/a7b9kihWQyYX+vStCsXCmnwPpTbvHkEyZXHKvhqr1+QkEuFjxmRMzyHQiZ5JR0wosY08Dlydu7PNSyDQ21iMmzS05YwIDAQAB',
     permissions: ['storage'],
     host_permissions: [...STORE_HOST_PERMISSIONS, ...proxyHost],
   },

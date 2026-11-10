@@ -1,15 +1,36 @@
-# Submission checklist
-- Team name: TBD (fill in)
-- Repository: https://github.com/HafsaAyesha/Unhaul
-- Final commit: TBD at submission (`git rev-parse HEAD` on main)
-- Release ZIP: build with `cd extension && npm run zip`, attach `.output/unhaul-*-chrome.zip` to a GitHub Release
-- Demo video: TBD (90 seconds, link here and in README)
-- Supported stores: 21, listed in README and `extension/src/store/stores.ts`; each passed `npm run stores:check`
-- Fixture check: `npm run fixtures:check` (all saved fixtures PASS)
-- Unit tests: `npm test`; typecheck: `npm run typecheck`
-- AI proxy: deployed? TBD. Without it the keyword fallback runs.
-- Fresh-profile judge walkthrough: TBD (follow README "Install (judges)")
-- No test accounts are needed; there is no login.
+# Submission Checklist
 
-Before handoff: run the checks above, search fixtures for token/csrf/session/@ and personal names,
-and send the final commit hash through the organizers' form by 3:00 PM.
+Complete before 3:00 PM. Submit your final commit hash through the organizers' form.
+
+## Submission details
+
+- **Team name:** TBD (fill in)
+- **Repository URL:** https://github.com/HafsaAyesha/Unhaul
+- **Final commit hash:** TBD (`git rev-parse HEAD` on main after the last merge)
+- **Live URL / install link:** TBD (GitHub Release with `unhaul-extension-0.1.0-chrome.zip`)
+- **Submitted at (time):** TBD
+
+## Checklist
+
+- [ ] Product is deployed and reachable without our laptops (create the GitHub Release)
+- [ ] README judge quick start tested by a team member on a fresh device or browser
+- [x] Test accounts listed in README and working (none needed: Unhaul has no login)
+- [x] All tests pass (see docs/testing.md)
+- [x] docs/requirements.md completed
+- [x] docs/design.md completed
+- [x] docs/testing.md completed
+- [ ] docs/ai-usage-log.md completed (team to add the final entries)
+- [x] docs/judge-checks.md completed with a pointer for every check
+- [x] No passwords, API keys or tokens in the repository or its history (searched 2026-11-10)
+- [x] No real personal data in the repository, database or demo
+- [x] No force-pushes or history rewrites
+
+## Still to do
+
+1. Merge the final pull requests to main.
+2. `cd extension && npm run zip`, then create the release:
+   `gh release create v1.0.0 extension/.output/unhaul-extension-0.1.0-chrome.zip --title "Unhaul v1.0.0" --notes "Event build"`
+3. Put the release link in README "Live deployment" and above.
+4. One teammate loads the ZIP in a fresh Chrome profile and follows the README quick start.
+5. Record the 90-second demo video and link it in README.
+6. Copy the final commit hash from main here and into the organizers' form before 3:00 PM.

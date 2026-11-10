@@ -5,7 +5,7 @@ compatibility_date = "2026-11-01"
 
 [vars]
 # Set the actual production extension origin(s), comma-separated; never use '*'.
-ALLOWED_ORIGINS = ""
+ALLOWED_ORIGINS = "chrome-extension://poclfboelhiknbalppadihkdciclhlha"
 # Select only needed public CDN hosts from the approved list in src/index.ts.
 IMAGE_HOSTS = "cdn.shopify.com,img.drz.lazcdn.com,static-01.daraz.pk"
 
