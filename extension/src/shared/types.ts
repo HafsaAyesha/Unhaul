@@ -1,5 +1,26 @@
+<<<<<<< HEAD
 // src/shared/types.ts
 import type { Category, ItemType, Purpose, WaitKey } from './lists';
+=======
+export type Category = 'stationery' | 'home-decor' | 'toys-games' | 'electronics' | 'clothing-accessories' | 'other';
+export interface Classification { category: Category; itemType: string; purpose?: string; colorFamily?: string; }
+export interface Product {
+  store: string; id: string; variantId?: string; url: string; title: string;
+  price?: number; currency?: string; image?: string;
+}
+export interface OwnedItem extends Classification { id: string; name: string; notes?: string; }
+export interface SavedItem {
+  id: string; product: Product; savedAt: number; reconsiderAt: number;
+  status: 'waiting' | 'skipped' | 'purchased';
+  deadline?: number | null; decidedAt?: number; notifiedAt?: number;
+}
+export interface VisitRecord { productId: string; timestamps: number[]; }
+export interface Settings { schemaVersion: 1; consentGiven: boolean; monthlyBudget?: number | null; }
+export const DEFAULT_SETTINGS: Settings = {
+  schemaVersion: 1,
+  consentGiven: false,
+};
+>>>>>>> 38a0ce5 (cleaning)
 
 export interface Product {
   store: string;               // location.hostname, e.g. 'soz.com.pk'

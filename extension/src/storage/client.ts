@@ -23,4 +23,8 @@ export const storageClient = {
   getClassificationCache: () => call('getClassificationCache', []),
   setClassificationCache: async (cache: ClassificationCache): Promise<void> => { await call('setClassificationCache', [cache]); },
   deleteAllUnhaulData: async (): Promise<void> => { await call('deleteAllUnhaulData', []); },
+  upsertSaved: (item: SavedItem) => call('upsertSaved', [item]),
+  recordVisit: async (productId: string): Promise<void> => { await call('recordVisit', [productId]); },
+  setSavedStatus: async (id: string, status: SavedItem['status']): Promise<void> => { await call('setSavedStatus', [{ id, status }]); },
+  setMonthlyBudget: async (monthlyBudget: number | null): Promise<void> => { await call('setMonthlyBudget', [monthlyBudget]); },
 };

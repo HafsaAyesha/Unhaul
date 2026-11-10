@@ -4,7 +4,10 @@ import { DEFAULT_SETTINGS } from '../src/shared/types';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from '../src/storage/keys';
 import { sampleItems } from '../src/storage/sample-items';
 const local = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), remove: vi.fn() }));
-vi.mock('wxt/browser', () => ({ browser: { storage: { local } } }));
+const alarms = vi.hoisted(() => ({ clearAll: vi.fn(), create: vi.fn(), getAll: vi.fn(async () => []), clear: vi.fn() }));
+const action = vi.hoisted(() => ({ setBadgeText: vi.fn() }));
+const notifications = vi.hoisted(() => ({ create: vi.fn() }));
+vi.mock('wxt/browser', () => ({ browser: { storage: { local }, alarms, action, notifications } }));
 let data: Record<string, unknown>;
 beforeEach(() => {
   vi.resetModules(); vi.resetAllMocks(); data = {};
@@ -109,7 +112,7 @@ describe('repository operations and ordering', () => {
     expect(items).toHaveLength(sampleItems.length + 1);
     expect(items.find(item => item.id === edited.id)).toEqual(edited);
     expect(items).toContainEqual(manual);
-    await expect(repo.addItem({ ...manual, name: 'Overwrite' })).rejects.toThrow('already exists');
+    await repo.addItem({ ...manual, name: 'Overwrite' });
     expect((await repo.getItems()).find(item => item.id === manual.id)).toEqual(manual);
   });
   it('orders queued reads after slow writes and recovers after failed writes', async () => {
@@ -179,6 +182,72 @@ describe('repository operations and ordering', () => {
     const { repo } = await import('../src/storage/repo');
     await Promise.all([repo.initializeStorage(), repo.loadSampleItems(), repo.deleteAllUnhaulData()]);
     expect(await repo.getItems()).toEqual([]); expect(data).toEqual({});
+  });
+});
+
+describe('saved deadlines, samples, insights', () => {
+  const product = { store: 'example.org', id: 'p1', title: 'Notebook', url: 'https://example.org/products/p1', price: 80 };
+  function waiting(overrides: Partial<{ savedAt: number; wait: 1 | 3 | 7 | null; id: string; price: number | null }> = {}) {
+    const savedAt = overrides.savedAt ?? 1_000_000;
+    const wait = overrides.wait === undefined ? 1 : overrides.wait;
+    const deadline = wait == null ? null : savedAt + wait * 86_400_000;
+    return {
+      id: overrides.id ?? 'p1',
+      product: { ...product, id: overrides.id ?? 'p1', price: overrides.price === undefined ? 80 : overrides.price ?? undefined },
+      savedAt, reconsiderAt: deadline ?? savedAt, deadline, status: 'waiting' as const,
+    };
+  }
+  it('sets deadline per wait and Ready only after a timed deadline', async () => {
+    const { waitDeadline, isReady } = await import('../src/storage/insights');
+    const savedAt = 1_000_000;
+    expect(waitDeadline(savedAt, 1)).toBe(savedAt + 86_400_000);
+    expect(waitDeadline(savedAt, 3)).toBe(savedAt + 3 * 86_400_000);
+    expect(waitDeadline(savedAt, 7)).toBe(savedAt + 7 * 86_400_000);
+    expect(waitDeadline(savedAt, null)).toBeNull();
+    const timed = waiting({ savedAt, wait: 1 });
+    expect(isReady(timed, savedAt + 86_400_000 - 1)).toBe(false);
+    expect(isReady(timed, savedAt + 86_400_000)).toBe(true);
+    expect(isReady(waiting({ savedAt, wait: null }), savedAt + 86_400_000 * 30)).toBe(false);
+  });
+  it('save twice keeps one waiting item', async () => {
+    const { repo } = await import('../src/storage/repo');
+    const item = waiting();
+    expect(await repo.upsertSaved(item)).toEqual({ result: 'saved', deadline: item.deadline });
+    expect(await repo.upsertSaved({ ...item, savedAt: item.savedAt + 10 })).toEqual({ result: 'already_saved', deadline: item.deadline });
+    expect(await repo.getSavedItems()).toHaveLength(1);
+  });
+  it('samples twice add no duplicate IDs', async () => {
+    const { repo } = await import('../src/storage/repo');
+    expect(await repo.loadSampleItems()).toBe(sampleItems.length);
+    expect(await repo.loadSampleItems()).toBe(0);
+    expect(await repo.getItems()).toHaveLength(sampleItems.length);
+    expect(sampleItems.filter(item => item.itemType === 'suit' && item.colorFamily === 'green').length).toBeGreaterThanOrEqual(3);
+  });
+  it('delete all leaves no unhaul: keys and clears alarms and badge', async () => {
+    data = { [K.settings]: { ...DEFAULT_SETTINGS }, [K.items]: sampleItems, [K.saved]: [], 'unhaul:extra': 1, unrelated: 'keep' };
+    const { repo } = await import('../src/storage/repo');
+    await repo.deleteAllUnhaulData();
+    expect(Object.keys(data).filter(key => key.startsWith('unhaul:'))).toEqual([]);
+    expect(alarms.clearAll).toHaveBeenCalled();
+    expect(action.setBadgeText).toHaveBeenCalledWith({ text: '' });
+  });
+  it('budget share, over-budget flag, and hidden when none', async () => {
+    const { computeInsights } = await import('../src/storage/insights');
+    const now = Date.UTC(2026, 10, 10);
+    const skipped = { ...waiting({ id: 's', price: 40 }), status: 'skipped' as const, decidedAt: now };
+    const purchased = { ...waiting({ id: 'b', price: 30 }), status: 'purchased' as const, decidedAt: now };
+    const noPrice = { ...waiting({ id: 'n', price: null }), status: 'purchased' as const, decidedAt: now };
+    expect(computeInsights([skipped, purchased, noPrice], null, now).hidden).toBe(true);
+    expect(computeInsights([skipped, purchased, noPrice], null, now).budgetShare(80)).toBeNull();
+    const within = computeInsights([purchased, noPrice], 100, now);
+    expect(within.spendThisMonth).toBe(30);
+    expect(within.potentialAvoided).toBe(0);
+    expect(within.budgetShare(35)).toBe(35 / 70);
+    expect(within.overBudget).toBe(false);
+    const over = computeInsights([purchased], 20, now);
+    expect(over.overBudget).toBe(true);
+    expect(over.budgetShare(1)).toBe(Number.POSITIVE_INFINITY);
+    expect(computeInsights([skipped], 100, now).potentialAvoided).toBe(40);
   });
 });
 

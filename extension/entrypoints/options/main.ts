@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { browser } from 'wxt/browser';
 import { storageClient } from '../../src/storage/client';
 import { STORAGE_KEYS } from '../../src/storage/keys';
@@ -49,3 +50,8 @@ const onStorageChanged: Parameters<typeof browser.storage.onChanged.addListener>
 };
 browser.storage.onChanged.addListener(onStorageChanged);
 void controller.refresh();
+=======
+import './style.css';
+import { mountOptions } from './controller';
+void mountOptions();
+>>>>>>> 38a0ce5 (cleaning)

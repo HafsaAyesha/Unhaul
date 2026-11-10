@@ -1,4 +1,5 @@
 <!doctype html>
+<<<<<<< HEAD
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Unhaul</title></head>
 <body><main>
@@ -21,4 +22,43 @@
   <section><h2>Saved for later</h2><p>The cooling-off list will appear here when implemented.</p></section>
   <button id="delete-data">Delete all Unhaul data</button>
 </div>
+=======
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Unhaul</title></head>
+<body><main>
+  <h1>Unhaul</h1>
+  <section id="consent-gate">
+    <h2>Consent</h2>
+    <p>Unhaul stores your items, visits and saved list on this device. Classification may send public product title and image to a proxy. Stores: Daraz, Nishat Linen, Stationers.pk, Izhar Shop, SOZ.</p>
+    <button type="button" id="agree">I agree</button>
+  </section>
+  <div id="app" hidden>
+    <section>
+      <h2>Quick-add</h2>
+      <p>Tap a type and a color. Name is optional.</p>
+      <input id="item-name" type="text" placeholder="Name (optional)" maxlength="80">
+      <div id="types"></div>
+      <div id="colors"></div>
+      <button type="button" id="quick-add">Add to wardrobe</button>
+    </section>
+    <section>
+      <h2>My Items</h2>
+      <button type="button" id="load-sample">Load sample wardrobe</button>
+      <ul id="items"></ul>
+    </section>
+    <section>
+      <h2>Saved for later</h2>
+      <ul id="saved"></ul>
+    </section>
+    <section>
+      <h2>Budget</h2>
+      <label>Monthly budget <input id="budget" type="number" min="0" step="1" placeholder="None"></label>
+    </section>
+    <section id="insights-section">
+      <h2>Insights</h2>
+      <p id="insights"></p>
+    </section>
+    <button type="button" id="delete-data">Delete all my data</button>
+  </div>
+  <p id="status" role="status"></p>
+>>>>>>> 38a0ce5 (cleaning)
 </main><script type="module" src="./main.ts"></script></body></html>

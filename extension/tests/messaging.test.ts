@@ -11,7 +11,19 @@ const mocks = vi.hoisted(() => ({
   initializeStorage: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn(),
 }));
+<<<<<<< HEAD
 vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage, getSettings: mocks.getSettings }));
+=======
+vi.mock('../src/storage/repo', () => ({
+  initializeStorage: mocks.initializeStorage,
+  rescheduleReminders: vi.fn(async () => {}),
+  handleSavedAlarm: vi.fn(),
+  recordVisit: vi.fn(),
+  upsertSaved: vi.fn(),
+  waitDeadline: vi.fn(),
+  getSettings: vi.fn(),
+}));
+>>>>>>> 38a0ce5 (cleaning)
 vi.mock('wxt/browser', () => ({ browser: {
   storage: { onChanged: { addListener: mocks.changed, removeListener: mocks.removeChanged } },
   runtime: { openOptionsPage: mocks.openOptionsPage, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },

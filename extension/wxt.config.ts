@@ -5,7 +5,9 @@ export default defineConfig({
   manifest: {
     name: 'Unhaul',
     description: 'Pause before impulse purchases across product categories.',
-    permissions: ['storage'],
+    permissions: ['storage', 'alarms', 'notifications'],
+    action: { default_icon: { 128: 'icon/128.png' } },
+    icons: { 128: 'icon/128.png' },
     host_permissions: ['https://www.daraz.pk/*'],
   },
 });

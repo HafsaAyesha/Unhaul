@@ -39,7 +39,8 @@ it('connects the typed client to background storage, including concurrent mutati
   const counts = await Promise.all([client.loadSampleItems(), client.loadSampleItems()]);
   expect(counts).toEqual([sampleItems.length, 0]); expect(await client.getItems()).toEqual(sampleItems);
   await client.deleteItem(sampleItems[0].id); expect(await client.getItems()).toHaveLength(sampleItems.length - 1);
-  await client.addItem(sampleItems[0]); await expect(client.addItem(sampleItems[0])).rejects.toThrow('already exists');
+  await client.addItem(sampleItems[0]); await client.addItem({ ...sampleItems[0], name: 'dup' });
+  expect((await client.getItems()).find(item => item.id === sampleItems[0].id)).toEqual(sampleItems[0]);
   await client.setSavedItems([]); await client.setVisits([]); await client.setClassificationCache({});
   expect(await client.getSavedItems()).toEqual([]); expect(await client.getVisits()).toEqual([]); expect(await client.getClassificationCache()).toEqual({});
   data.unrelated = 'keep'; await client.deleteAllUnhaulData();

@@ -1,16 +1,20 @@
 import type { Settings, OwnedItem, SavedItem, VisitRecord, ClassificationCache } from './types';
-import { record, isSettings, isItems, isOwnedItem, isSavedItems, isVisits, isCache, isNonemptyString } from './storage-validation';
+import { record, isSettings, isItems, isOwnedItem, isSavedItem, isSavedItems, isVisits, isCache, isNonemptyString } from './storage-validation';
 export interface StorageArguments {
   initializeStorage: []; getSettings: []; setConsent: [boolean];
   getItems: []; addItem: [OwnedItem]; deleteItem: [string]; loadSampleItems: [];
   getSavedItems: []; setSavedItems: [SavedItem[]]; getVisits: []; setVisits: [VisitRecord[]];
   getClassificationCache: []; setClassificationCache: [ClassificationCache]; deleteAllUnhaulData: [];
+  upsertSaved: [SavedItem]; recordVisit: [string];
+  setSavedStatus: [{ id: string; status: SavedItem['status'] }]; setMonthlyBudget: [number | null];
 }
 export interface StorageResults {
   initializeStorage: null; getSettings: Settings; setConsent: null;
   getItems: OwnedItem[]; addItem: null; deleteItem: null; loadSampleItems: number;
   getSavedItems: SavedItem[]; setSavedItems: null; getVisits: VisitRecord[]; setVisits: null;
   getClassificationCache: ClassificationCache; setClassificationCache: null; deleteAllUnhaulData: null;
+  upsertSaved: { result: 'saved' | 'already_saved'; deadline: number | null };
+  recordVisit: null; setSavedStatus: null; setMonthlyBudget: null;
 }
 export type StorageOperation = keyof StorageArguments;
 export type StorageRequest = { [K in StorageOperation]: {
@@ -32,6 +36,11 @@ export function isStorageRequest(value: unknown): value is StorageRequest {
     case 'setSavedItems': return isSavedItems(args[0]);
     case 'setVisits': return isVisits(args[0]);
     case 'setClassificationCache': return isCache(args[0]);
+    case 'upsertSaved': return isSavedItem(args[0]);
+    case 'recordVisit': return isNonemptyString(args[0]);
+    case 'setSavedStatus': return record(args[0]) && isNonemptyString(args[0].id)
+      && typeof args[0].status === 'string' && ['waiting', 'skipped', 'purchased'].includes(String(args[0].status));
+    case 'setMonthlyBudget': return args[0] === null || (typeof args[0] === 'number' && Number.isFinite(args[0]) && args[0] >= 0);
     default: return false;
   }
 }
@@ -47,6 +56,8 @@ export function isStorageResponse<K extends StorageOperation>(operation: K, valu
     case 'getVisits': return isVisits(value.value);
     case 'getClassificationCache': return isCache(value.value);
     case 'loadSampleItems': return typeof value.value === 'number' && Number.isSafeInteger(value.value) && value.value >= 0;
+    case 'upsertSaved': return record(value.value) && (value.value.result === 'saved' || value.value.result === 'already_saved')
+      && (value.value.deadline === null || (typeof value.value.deadline === 'number' && Number.isSafeInteger(value.value.deadline)));
     default: return value.value === null;
   }
 }

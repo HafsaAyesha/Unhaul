@@ -16,6 +16,10 @@ async function execute(request: StorageRequest): Promise<StorageResults[StorageO
     case 'getClassificationCache': return repo.getClassificationCache();
     case 'setClassificationCache': await repo.setClassificationCache(request.args[0]); return null;
     case 'deleteAllUnhaulData': await repo.deleteAllUnhaulData(); return null;
+    case 'upsertSaved': return repo.upsertSaved(request.args[0]);
+    case 'recordVisit': await repo.recordVisit(request.args[0]); return null;
+    case 'setSavedStatus': await repo.setSavedStatus(request.args[0].id, request.args[0].status); return null;
+    case 'setMonthlyBudget': await repo.setMonthlyBudget(request.args[0]); return null;
   }
 }
 export async function dispatchStorage(request: StorageRequest): Promise<StorageResponse> {
