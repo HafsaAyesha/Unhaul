@@ -2,24 +2,28 @@
 Updated general-shopping MVP; original clothing-only fields are replaced by category,
 item type and optional purpose. Four-to-five-hour estimate assumes three teammates.
 
-| Requirement | Status |
-| --- | --- |
-| FR-01–03 product extraction and navigation | Store adapter placeholder |
-| FR-04–05 badge and reflection triggers | UI helpers only; integration pending |
-| FR-06–07 My Items | Sample load/list/delete-all implemented; manual add/delete pending |
-| FR-08 matching | Basic category/item-type matching implemented |
-| FR-09 AI classification | Proxy and client placeholders; not integrated |
-| FR-10 reflection selection | Basic match/no-match prompts only |
-| FR-11–12 cooling-off list | Pending |
-| FR-13 persistent deadlines | Pending; browser notifications deferred |
-| FR-14 delete all data | Options-page control implemented |
-| FR-15–23 additional features | Deferred: insights, purchased-to-items, notifications, pause controls, generated prompts, budget, extra stores, cart recognition, untimed saves |
+| ID | Feature | Status (2026-11-10) |
+| --- | --- | --- |
+| FR-01 | First-run consent; nothing runs on stores until agreement | Implemented, automated + synthetic Chromium checks |
+| FR-02 | Product pages recognized on the supported stores with one generic reader | Implemented; 21 stores in `src/store/stores.ts`; fixtures pass `npm run fixtures:check` |
+| FR-03 | Title, price, currency, image, product ID | Implemented (JSON-LD Product/ProductGroup, then Open Graph); price left empty when variants differ |
+| FR-04 | Product change without reload | Implemented (popstate/hashchange and metadata changes) |
+| FR-05 | Visits recorded locally, deduplicated within 30 min | Implemented (`recordVisit`, unit tested) |
+| FR-06 | Add to cart watched without blocking | Implemented (capture listeners; never preventDefault) |
+| FR-07 | Sample items, no duplicates on repeat | Implemented |
+| FR-08 | Quick-add owned item | Implemented |
+| FR-09 | List owned items; delete all data | Implemented |
+| FR-10 | AI classification through the proxy | Implemented; live only once the proxy is deployed |
+| FR-11 | Keyword fallback | Implemented |
+| FR-12 | Matching, up to 3 with reasons | Implemented |
+| FR-13 | Badge and panel, auto-open once per product per session | Implemented |
+| FR-14 | Rule-chosen question | Implemented |
+| FR-15 | Save for later 24 h / 3 d / 7 d | Implemented |
+| FR-16 | Cooling-off list survives restart | Implemented; native Chrome restart to be confirmed in the demo run |
+| FR-17 | Skip and Purchased | Implemented |
 
-Acceptance: validate extraction across categories, preserve merchant Add to cart,
-keep save deadlines after restart, show Ready when reopened, handle AI failure,
-and clear all local data. These end-to-end checks have not yet been run.
-No checkout freezing, automatic purchase verification, accounts or cloud sync.
-No AI accuracy, latency or usability target is claimed as achieved.
+Deferred: notifications, pause-on-site, budget/insights, untimed saves, purchased-to-items.
+Not building: checkout blocking, purchase detection, accounts, cloud sync.
 
 ## Installation consent task
 Implemented: install-only options opening, loading/error/Retry states, explicit

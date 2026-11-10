@@ -12,11 +12,14 @@ import { fileURLToPath } from 'node:url';
 
 // Category IDs follow src/shared/lists.ts CATEGORIES.
 const SITES = {
+  // Stores that passed `npm run stores:check` on 2026-11-10.
+  stationery: ['stationers.pk', 'thestationerycompany.pk', 'zubaidas.com', 'rung.com.pk', 'theschoolstore.pk', 'saleemibookdepot.com'],
+  toys_games: ['toycompany.pk', 'toynix.pk', 'odeez.pk', 'babybazar.pk', 'chasevalue.pk'],
+  other: ['designyourown.pk'], // gifts
   clothing_accessories: ['blingspot.pk'], // jewellery and gifts
-  toys_games: ['odeez.pk', 'toynix.pk', 'alsimba.pk', 'babybazar.pk'],
-  stationery: ['thestationerycompany.pk', 'theschoolstore.pk', 'rung.com.pk', 'clover.pk'],
+  home_decor: ['soz.com.pk', 'nishatlinen.com'],
 };
-const PER_STORE = 3;
+const PER_STORE = 2;
 
 const fromCli = process.argv.slice(2).map((a) => (a.includes(':') ? a.split(':') : ['other', a]));
 const JOBS = fromCli.length

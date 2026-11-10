@@ -72,3 +72,9 @@ Phase 8 push required merging concurrent main changes. Kept incoming fixtures/he
 files, preserved exact incompatible draft sources in docs/merge-preservation, and
 retained the tested active consent/storage contracts without notification permissions.
 Revalidated the merged active code; no history rewrite or source archive loss.
+
+2026-11-10 (Claude Code): wrote `stores:check` (vets Pakistani stores) and `fixtures:check` (offline
+Chromium fixture check), moved the store list to `src/store/stores.ts`, added the 15 stores that passed,
+let the reader accept JSON-LD ProductGroup, implemented visit recording and the Add to cart reply,
+and refreshed README/requirements/testing/SUBMISSION. Checked with unit tests, tsc, fixtures:check
+and the smoke test; the live store run was done by the team on their own laptop.

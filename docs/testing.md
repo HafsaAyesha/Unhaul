@@ -169,3 +169,15 @@ preserved in docs/merge-preservation; they are not active or claimed as passed.
 Incoming fixtures, helper script, icon, package command and standalone insights module
 were retained. After resolution, reran the active 97-test suite, typecheck and build;
 all passed. Incoming raw fixture whitespace was preserved rather than reformatted.
+
+## Submission checks (2026-11-10)
+- `npm run stores:check` (team laptop, real Chrome): 15 Pakistani stationery, toy, gift and decor
+  stores passed and were added to `src/store/stores.ts`. Failed and left out: alsimba.pk (DNS),
+  babytoys.pk and giftkarte.com (no product link), toobas.pk (bot challenge), artsupplies.pk and
+  fineartsmaterial.pk (product URLs are `/product/`, not `/products/`). A robots.txt wildcard bug
+  in the first run was fixed in PR #5.
+- `npm run fixtures:check` (Chromium, offline): 5/5 saved fixtures PASS: URL in host_permissions and
+  content matches, content script injected, reader returns title, price and PKR. The Beechtree
+  fixture was removed because the saved page was the homepage.
+- Visit recording: unit tests cover 30-minute dedupe, 30-day pruning and the consent requirement.
+- `npm test`: all tests pass. `tsc --noEmit`: clean. Extension smoke test: PASS.
