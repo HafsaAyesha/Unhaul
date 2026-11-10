@@ -17,9 +17,9 @@ export default defineContentScript({
         if (typeof document !== 'undefined') {
           const client = createAnalysisClient();
           mountReflectionExperience({ scope, analyze: client.analyze, cancelAnalysis: client.cancel,
-            saveProduct: (product, wait) => {
+            saveProduct: (product, wait, devTestWait) => {
               if (!scope.isCurrent()) return Promise.reject(new Error('Consent was revoked.'));
-              return send({ type: 'SAVE_ITEM', product, wait });
+              return send(devTestWait && import.meta.env.DEV ? { type: 'SAVE_ITEM', product, wait, devTestWait: true } : { type: 'SAVE_ITEM', product, wait });
             },
             claimAutoOpen: async productId => (await send({ type: 'CLAIM_PANEL_OPEN', productId })).allowed });
         }

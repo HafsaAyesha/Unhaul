@@ -73,10 +73,21 @@ files, preserved exact incompatible draft sources in docs/merge-preservation, an
 retained the tested active consent/storage contracts without notification permissions.
 Revalidated the merged active code; no history rewrite or source archive loss.
 
-## Phase 7 UI gap review — 2026-11-10
-AI assistance updated panel price formatting/missing-price suppression, keyword-only
-Basic matching label and singular/plural badge wording. Added one DOM panel test
-using existing Playwright infrastructure. Merchant interactions and shared contracts
-are unchanged by this task.
-Validation: npx tsc --noEmit, requested reflection.test.ts (2 tests, one new)
-and production build passed. Full suite and live merchant checks were not run.
+## Phase 6 gap review — 2026-11-10
+AI assistance added fixture-backed sweater → outerwear and wallet → bag synonyms,
+retained matchItems because core.test.ts uses it, corrected AI documentation and
+added an unchanged-label diagnostic and accuracy CLI. No upstream/provider changes,
+labels edited or credentials added. Measured results are in testing.md.
+2026-11-10 (Claude Code): wrote `stores:check` (vets Pakistani stores) and `fixtures:check` (offline
+Chromium fixture check), moved the store list to `src/store/stores.ts`, added the 15 stores that passed,
+let the reader accept JSON-LD ProductGroup, implemented visit recording and the Add to cart reply,
+and refreshed README/requirements/testing/SUBMISSION. Checked with unit tests, tsc, fixtures:check
+and the smoke test; the live store run was done by the team on their own laptop.
+
+## Release prep — 2026-11-10 (Claude Code)
+Fixed final display gaps (PR #10: PKR price formatter, badge wording, Basic matching label, countdown
+wording, saved-list layout) with 2 new unit tests. Rewrote README under the template headings, moved the
+per-phase build notes into design.md, added the NFR table to requirements.md, a current-status and
+edge-case table to testing.md, filled judge-checks.md and SUBMISSION.md, ran `npx wxt zip` and inspected
+the ZIP (storage only, 21 store domains, no secrets). Searched tracked files and full git history for keys:
+no hits. The team reviewed and merged the pull requests.

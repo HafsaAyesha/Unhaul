@@ -120,7 +120,9 @@ export function getSavedItems(): Promise<SavedItem[]> {
   return queued(() => read(K.saved, [], isSavedItems, 'saved items'));
 }
 /** Atomic save. Waiting/Ready duplicates retain their original snapshot and deadline. */
-export async function saveProduct(product: Product, wait: WaitKey): Promise<SaveResult> {
+/** devTestWait gives a 1-minute deadline, honoured only in dev builds (import.meta.env.DEV is false in production). */
+export const DEV_TEST_WAIT_MS = 60_000;
+export async function saveProduct(product: Product, wait: WaitKey, devTestWait = false): Promise<SaveResult> {
   const generation = currentConsentGeneration();
   const snapshot = structuredClone(product);
   return queued(async () => {
@@ -135,7 +137,7 @@ export async function saveProduct(product: Product, wait: WaitKey): Promise<Save
       return { type: 'SAVE_RESULT', result: 'already_saved', deadline: existing.reconsiderAt ?? existing.deadline, record: existing };
     }
     const savedAt = Date.now();
-    const deadline = savedAt + WAITS[wait];
+    const deadline = savedAt + (devTestWait && import.meta.env.DEV ? DEV_TEST_WAIT_MS : WAITS[wait]);
     const item: SavedItem = { id: crypto.randomUUID(), product: snapshot, wait, savedAt, deadline, reconsiderAt: deadline, status: 'waiting' };
     requireValid([item], isSavedItems, 'saved item');
     await requireConsent(generation); assertCurrentWork(generation);
@@ -189,6 +191,23 @@ export function setVisits(records: VisitRecord[], work?: ConsentWork): Promise<v
     await write(K.visits, records);
   });
 }
+/** FR-05: records a product visit. The same product within 30 minutes counts once; history keeps 30 days. */
+export function recordVisit(productId: string, now = Date.now()): Promise<void> {
+  const generation = currentConsentGeneration();
+  return queued(async () => {
+    const visits = await read(K.visits, [], isVisits, 'visits');
+    const keep = (times: number[]) => times.filter(time => now - time <= 30 * 86_400_000);
+    const current = visits.find(visit => visit.productId === productId);
+    const times = keep(current?.times ?? []);
+    if (times.some(time => now - time < 30 * 60_000)) return;
+    const next = visits.filter(visit => visit.productId !== productId)
+      .map(visit => ({ ...visit, times: keep(visit.times) })).filter(visit => visit.times.length > 0);
+    next.push({ productId, times: [...times, now] });
+    await requireConsent(generation);
+    assertCurrentWork(generation);
+    await write(K.visits, next.slice(-500));
+  });
+}
 export function getClassificationCache(): Promise<ClassificationCache> {
   return queued(() => read(K.classificationCache, {}, isCache, 'classification cache'));
 }
@@ -228,7 +247,7 @@ export function deleteAllUnhaulData(): Promise<void> {
 }
 export const repo = {
   initializeStorage, getSettings, setConsent, getItems, addItem, deleteItem, loadSampleItems,
-  getSavedItems, saveProduct, decideSavedItem, setSavedItems, getVisits, setVisits,
+  getSavedItems, saveProduct, decideSavedItem, setSavedItems, getVisits, setVisits, recordVisit,
   getClassificationCache, setClassificationCache, deleteAllUnhaulData,
 };
 

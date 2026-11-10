@@ -22,7 +22,7 @@ export type Request =
   | { type: 'REFINE_PRODUCT'; analysisId: string }
   | { type: 'CLAIM_PANEL_OPEN'; productId: string }
   | { type: 'ADD_TO_CART_CLICKED'; productId: string }
-  | { type: 'SAVE_ITEM'; product: Product; wait: WaitKey };
+  | { type: 'SAVE_ITEM'; product: Product; wait: WaitKey; devTestWait?: true };  // devTestWait: dev builds only, 1-minute deadline
 
 export type Response =
   | { type: 'PONG' }
@@ -80,7 +80,8 @@ export function isProductRequest(value: unknown): value is ProductRequest {
     case 'PRODUCT_SEEN': return isProduct(value.product);
     case 'REFINE_PRODUCT': return isNonemptyString(value.analysisId);
     case 'ADD_TO_CART_CLICKED': return isNonemptyString(value.productId);
-    case 'SAVE_ITEM': return isProduct(value.product) && typeof value.wait === 'string' && Object.hasOwn(WAITS, value.wait);
+    case 'SAVE_ITEM': return isProduct(value.product) && typeof value.wait === 'string' && Object.hasOwn(WAITS, value.wait)
+      && (value.devTestWait === undefined || (value.devTestWait === true && import.meta.env.DEV));
     default: return false;
   }
 }

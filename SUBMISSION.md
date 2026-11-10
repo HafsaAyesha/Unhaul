@@ -1,13 +1,36 @@
-# Submission checklist
-- Team name: TBD
-- Repository: https://github.com/HafsaAyesha/Unhaul
-- Final commit: TBD at submission
-- Release ZIP / installation link: not published
-- Demo video: not recorded
-- Supported store: not verified
-- Fresh-profile judge walkthrough: not run
-- Organizer criteria: pending
+# Submission Checklist
 
-This repository currently contains the development scaffold, not a finished submission.
-Before handoff, run checks in README, record results, test the release ZIP, inspect for
-secrets/personal data, and provide the final commit hash. No test accounts are intended.
+Complete before 3:00 PM. Submit your final commit hash through the organizers' form.
+
+## Submission details
+
+- **Team name:** TBD (fill in)
+- **Repository URL:** https://github.com/HafsaAyesha/Unhaul
+- **Final commit hash:** TBD (`git rev-parse HEAD` on main after the last merge)
+- **Live URL / install link:** TBD (GitHub Release with `unhaul-extension-0.1.0-chrome.zip`)
+- **Submitted at (time):** TBD
+
+## Checklist
+
+- [ ] Product is deployed and reachable without our laptops (create the GitHub Release)
+- [ ] README judge quick start tested by a team member on a fresh device or browser
+- [x] Test accounts listed in README and working (none needed: Unhaul has no login)
+- [x] All tests pass (see docs/testing.md)
+- [x] docs/requirements.md completed
+- [x] docs/design.md completed
+- [x] docs/testing.md completed
+- [ ] docs/ai-usage-log.md completed (team to add the final entries)
+- [x] docs/judge-checks.md completed with a pointer for every check
+- [x] No passwords, API keys or tokens in the repository or its history (searched 2026-11-10)
+- [x] No real personal data in the repository, database or demo
+- [x] No force-pushes or history rewrites
+
+## Still to do
+
+1. Merge the final pull requests to main.
+2. `cd extension && npm run zip`, then create the release:
+   `gh release create v1.0.0 extension/.output/unhaul-extension-0.1.0-chrome.zip --title "Unhaul v1.0.0" --notes "Event build"`
+3. Put the release link in README "Live deployment" and above.
+4. One teammate loads the ZIP in a fresh Chrome profile and follows the README quick start.
+5. Record the 90-second demo video and link it in README.
+6. Copy the final commit hash from main here and into the organizers' form before 3:00 PM.

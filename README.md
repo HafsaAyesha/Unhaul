@@ -1,166 +1,135 @@
 # Unhaul
-A Chrome extension that helps users reconsider impulse purchases across categories:
-stationery, home décor, toys, electronics, clothing and more.
 
-## Status
-Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
-classification, matching and installation consent onboarding exist. Structured product
-reading and reflection UI are implemented for the existing Daraz scope; live store
-verification is pending. Saving and the cooling-off list are implemented with persisted absolute deadlines. AI refinement is implemented but disabled until the proxy is configured and deployed.
-Daraz Pakistan is the Phase 2 target. Production host access is restricted to
-`https://www.daraz.pk/*`, with content injection only on `/products/*`.
-The content script reads products and mounts a reflection badge/panel only after
-literal true consent. It stops on revocation and resumes after agreement in an
-already-open supported tab. PING/PONG remains a diagnostic.
-Live store extraction is not verified.
-Automatic visit recording is not enabled; external AI calls are disabled without proxy configuration.
+> AI-Powered SE-MAX · CUI Tech Fest FA'26 · Team: TBD (fill in)
 
-## Development
-Use the existing checkout; no extra worktree is needed. Node.js 22.12+ recommended.
+## What it does
+
+Unhaul is a Chrome extension that gives you a short, voluntary pause before an impulse buy. On a supported store's product page it shows which things you already own are similar, asks one reflective question, and lets you save the product for 24 hours, 3 days or 7 days before deciding. It works across product types: stationery, home décor, toys, electronics, clothing and accessories.
+
+## Problem and user
+
+The user is an online shopper in Pakistan who often buys things they already have, or regrets a purchase a few days later. Store pages are built to make buying fast. Unhaul adds a moment to reflect at the point of Add to cart, without blocking checkout or changing the store's cart.
+
+## Live deployment
+
+- **URL / install link:** [RELEASE URL, add after `gh release create`]
+- **Platform:** Google Chrome (desktop), loaded as an unpacked Manifest V3 extension
+
+## Judge quick start (under 5 minutes)
+
+1. Download `unhaul-extension-0.1.0-chrome.zip` from the release link above and unzip it.
+2. Open `chrome://extensions` and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and choose the unzipped folder. The Unhaul consent page opens.
+4. Click **Agree and enable Unhaul**, then **Load sample items**. Optionally quick-add one of your own items.
+5. Open one of the product links below. A small Unhaul badge appears at the bottom right.
+6. Click the store's **Add to cart**. The store adds the item as normal, and the Unhaul panel opens with similar items you own and a question.
+7. Choose a wait and click **Save for later**. Open the extension's options page (right-click the Unhaul icon, then **Options**) to see the cooling-off list, the time left, and the Skip and Purchased buttons.
+
+Product pages that pass the saved-page check (`npm run fixtures:check`):
+
+- https://outfitters.com.pk/products/f0283-113
+- https://zellbury.com/products/mock-neck-zipper-sweater-1005
+- https://junaidjamshed.com/products/matt-black-plain-peshawari-sandals-jpc21363gkpln
+- https://crossstitch.pk/products/espresso-dream-rts
+- https://bonanzasatrangi.com/products/c-bean-turtle-neck-zipper-full-sleeves-sweater-753-13
+
+Any product page (a URL containing `/products/`) on these supported stores also works. Each passed the live store check (`npm run stores:check`) on 2026-11-10:
+
+| Category | Stores |
+|---|---|
+| Stationery | stationers.pk, thestationerycompany.pk, rung.com.pk, theschoolstore.pk, saleemibookdepot.com |
+| Toys | toycompany.pk, toynix.pk, odeez.pk, babybazar.pk |
+| Gifts and décor | zubaidas.com, chasevalue.pk, designyourown.pk, blingspot.pk, soz.com.pk |
+| Clothing and home | nishatlinen.com, bonanzasatrangi.com, crossstitch.pk, junaidjamshed.com, outfitters.com.pk, zellbury.com |
+| General | daraz.pk |
+
+The single store list is `extension/src/store/stores.ts`. It feeds the manifest's host permissions, the content script matches and the product reader. Unhaul never requests access to all sites.
+
+## Test accounts
+
+No test accounts needed: Unhaul has no login.
+
+## Run locally
+
+### Prerequisites
+
+- Node.js 22.12 or newer, and npm
+- Google Chrome
+- For the AI proxy only: a Cloudflare account and Wrangler (installed by `npm ci` in `proxy/`)
+
+### Setup
 
 ```sh
 cd extension
 npm ci
-npm run dev
-# Manually load .output/chrome-mv3-dev in your Unhaul test profile.
-# In another terminal, or after stopping dev:
-npm run typecheck
-npm test
-npm run build
-npm run zip
 ```
 
-In managed environments with a read-only home directory, pass
-`--cache /workspace/.npm-cache` to `npm ci`. For Wrangler, use
-`XDG_CONFIG_HOME=/workspace/.unhaul-config WRANGLER_SEND_METRICS=false`
-before its npm commands. These paths are outside the checkout.
+### Environment variables
 
-Load `extension/.output/chrome-mv3` through Chrome → Extensions → Developer mode
-→ Load unpacked after a production build. Open the extension's options page to
-agree to the consent screen, then load fictional sample items or delete local data. See `proxy/README.md` for the worker.
+Names only. Put values in a local `.env` file, which is git-ignored (see `.env.example`).
 
-## MVP scope
-One verified shopping website with multiple categories; My Items; product extraction;
-matching; a reflection panel; Save for later; a persistent cooling-off list.
-Checkout is never blocked. Saving must not change the merchant's cart.
-Keep owned items and visit history local. If AI is enabled later, disclose the public
-product information transmitted to the proxy/provider.
+- Extension build: `PROXY_URL`, `EXTENSION_TOKEN`
+- Proxy (Wrangler secrets, never in the repo): `AI_API_KEY`, `EXTENSION_TOKEN`
 
-## Ownership
-- A: store adapters, content script, badge, panel, product fixtures.
-- B: shared contracts, classification, AI proxy, matching, labelled evaluation.
-- C: storage, consent/options page, cooling-off list, packaging and documentation.
+Without `PROXY_URL` the extension uses keyword matching only, and everything else works the same.
 
-See `docs/phase-2-handoff.md` for the PING/PONG walkthrough and A/B handoff.
-See `docs/requirements.md` for implementation status and `SUBMISSION.md` for handoff.
-
-## Planned proxy settings
-Copy the root `.env.example` to `.env` when needed. `PROXY_URL` and `EXTENSION_TOKEN`
-are reserved for later integration and are not read or bundled by this phase.
-An extension-distributed token cannot be treated as a durable secret.
-
-## Storage development
-All active extension storage access belongs to the background repository. UI/content
-uses `extension/src/storage/client.ts`; do not import repo.ts into an entrypoint
-other than background. See docs/design.md for validation, legacy migration,
-full-snapshot setter semantics and delete-all behavior.
-
-## Fictional sample items
-The demo includes ten records (`sample-01` through `sample-10`), two each for
-stationery, home décor, toys/games, electronics, and clothing/accessories. Existing
-taxonomy IDs use underscores. Pen sets use `pen`, decorative lights use `lamp`,
-backpacks use `bag`, and caps use the additive `cap` type.
-
-The journal/headphones samples support keyword/type matching demonstrations;
-unrepresented types such as mugs support no-match demonstrations. These are
-illustrative examples, not verified store fixtures: real-fixture alignment is pending.
-
-Older installs may still contain `sample-journal`, `sample-vase`,
-`sample-headphones` and `sample-puzzle`. Loading the new set preserves these and
-may leave 14 records, including semantically similar old/new samples. No automatic
-migration or deletion is performed in this sample-data task. The existing Delete
-all data action removes all Unhaul data if a fresh demo is wanted; it also removes
-consent and user-created records, so it is not a selective sample reset.
-
-## Classification and matching (Phase 6)
-PRODUCT_SEEN returns basic keyword analysis immediately. REFINE_PRODUCT uses its
-analysisId for optional AI refinement. The Phase 7 badge/panel uses
-`extension/src/classify/client.ts` to publish basic results first, then current AI
-results, discarding replies after navigation/variant changes or consent revocation.
-Phase 7 connects this helper to the structured reader and reflection UI.
-
-Matching returns at most three explained same-type examples and the full match
-count, excluding known conflicting purposes and broad-category-only similarity.
-AI results use versioned product/variant cache keys and expire after 24 hours;
-timeouts/offline/invalid replies use uncached keyword fallback so later requests
-can retry. The background owns all analysis/cache operations and enforces consent.
-
-See proxy/README.md for the server-side key, fixed model, exact origin/CDN allowlists,
-rate limiting and PROXY_URL build setup. No live AI/deployment/accuracy result is
-claimed. Incoming store fixtures are retained, but they do not establish live Daraz integration.
-
-## Reflection UI (Phase 7)
-After consent, recognized Daraz product pages show a small badge. Click it manually
-or interact with Add to cart to open a nonmodal reflection panel. Continue shopping,
-the dismiss button, or Escape closes it. Merchant clicks/submits are not cancelled
-or modified. The panel displays current structured title/price, explained matches
-and one rule-selected question. Missing price/currency is shown as unavailable.
-
-Save for later offers 24 hours, 3 days or 7 days. Success appears only after the
-background acknowledges persistence. It does not reserve stock, lock prices or
-change the merchant cart. Open extension options to view the cooling-off list.
-
-Automatic opening is limited once per product per actual tab session. Background
-storage.session markers survive document reloads and worker suspension, are shared
-across frames in a tab, and clear on tab close, browser restart, extension reload/update or Delete all data.
-Variants of the same product share the limit; manual opening remains available.
-After 500 distinct products in one tab, further automatic opening is denied.
-
-The minimal structured reader uses Product JSON-LD or product Open Graph metadata;
-no guessed merchant DOM selectors are used. It rejects contradictory canonical URLs
-and waits for metadata changes on path navigation. Variant prices require matching
-SKU offers; otherwise the price stays unavailable. Existing recorded history can
-select the repeat-visit prompt (prior visit 30 minutes–30 days old); this phase does
-not add automatic visit recording. Unknown/unrecognized pages show no shopping UI.
-
-A synthetic ordinary-Chromium smoke check passed; this is not a live Daraz or native
-extension-installation check. Incoming retailer fixtures are retained; they have not been validated for the active Daraz integration. See testing.md
-and the repeatable harness commands below:
+### Run
 
 ```sh
 cd extension
-./node_modules/.bin/esbuild scripts/reflection-smoke-harness.ts --bundle --format=iife --global-name=UnhaulHarness --outfile=/tmp/unhaul-reflection-harness.js
-node scripts/reflection-smoke.mjs
+npm run build        # production build in .output/chrome-mv3
+npm run zip          # release ZIP in .output/
 ```
 
-The harness injects fake analysis/claims into intercepted synthetic pages only. It
-is not an extension entrypoint and is not bundled in the production extension.
+Load `extension/.output/chrome-mv3` with **Load unpacked** in `chrome://extensions`. To develop with reload, run `npm run dev` and load `.output/chrome-mv3-dev`.
 
-## Cooling-off list (Phase 8)
-Use Save for later in the reflection panel, select 24 hours, 3 days or 7 days, and
-wait for the save confirmation. Options → Saved for later shows the saved snapshot,
-saved time, deadline and live remaining time/Ready. Skip and Purchased record your
-own decision; Purchased is not automatic purchase verification or an owned-item add.
+AI proxy (optional):
 
-Active duplicates (including Ready items) are identified by store + product ID +
-variant ID and preserve their original snapshot/deadline. Saving a decided product
-again appends a new record with a fresh ID; its earlier decision stays in history.
-Legacy deadline-only records and product-ID record IDs are read without rewriting.
-New records store reconsiderAt and the compatibility deadline field identically.
+```sh
+cd proxy
+npm ci
+npx wrangler secret put AI_API_KEY
+npx wrangler secret put EXTENSION_TOKEN
+npx wrangler deploy
+```
 
-Ready is calculated from the absolute timestamp and the device clock whenever the
-view opens/focuses/becomes visible, and every second while visible. Clock changes
-can affect the displayed time; this is not tamper-proof timing. No alarms or browser
-notifications were added. Delete all data clears saved records and consent, and
-open lists react to changes without recreating deleted data.
+`ALLOWED_ORIGINS` in `proxy/wrangler.toml` is already set to the extension's fixed ID (`chrome-extension://poclfboelhiknbalppadihkdciclhlha`, pinned by the public `key` in `wxt.config.ts`). Then build the extension with the proxy URL: `PROXY_URL=https://<your-worker>.workers.dev EXTENSION_TOKEN=<same token> npm run zip`. See `proxy/README.md` for details.
 
-Automated persistence/module-reload checks and a synthetic ordinary-Chromium UI flow
-passed. Native extension save/restart acceptance remains unverified because the
-managed browser blocks extensions. No live merchant purchase or provider call ran.
+### Run tests
 
-## Concurrent incoming work
-The Phase 8 merge retained new fixture files and their saver script. Conflicting
-source drafts from the incoming branch contained unresolved merge markers and an
-alternate notification/budget UI; exact copies are preserved under
-`docs/merge-preservation/` for separate integration. They were not activated in this
-storage/save-flow task, and existing consent/storage contracts remain in use.
+```sh
+cd extension
+npm run typecheck
+npm test               # unit tests (Vitest)
+npm run fixtures:check # loads the built extension in Chromium against saved store pages
+npm run stores:check   # checks candidate stores live
+```
+
+In `proxy/`: `npx tsc --noEmit`.
+
+## Known limitations
+
+- Chrome on desktop only.
+- Runs only on the listed stores, and only on product pages whose URL contains `/products/`.
+- Purchased is self-reported. Unhaul does not detect or verify purchases.
+- When AI is enabled, the public product title, category text and image URL are sent through our proxy to OpenAI (gpt-4o-mini) for classification. Owned items, visits and the saved list never leave the browser.
+- AI accuracy has not been measured yet. The last run had no proxy configured (see docs/testing.md), and this release ZIP is built without `PROXY_URL`, so it uses keyword matching.
+- There are no reminders or notifications. Open the options page to see when an item is ready.
+- Time left uses the device clock.
+
+## Documentation
+
+- [Requirements](docs/requirements.md)
+- [Design](docs/design.md) (includes the older per-phase build notes)
+- [Testing](docs/testing.md)
+- [AI usage log](docs/ai-usage-log.md)
+- [Judge checks](docs/judge-checks.md)
+- [Project context](context.md)
+
+## Team
+
+| Name | Role |
+|------|------|
+| Hafsa Ayesa (A) | Store pages: product reader, visits, Add to cart watching, badge and panel, fixtures |
+| Amna Farooq (B) | AI and matching: shared contracts, keywords, AI proxy, matching, questions, accuracy |
+| Ummara Amin (C) | App and data: storage, consent, My Items, cooling-off list, release ZIP |

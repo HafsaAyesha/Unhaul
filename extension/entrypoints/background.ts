@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser';
 import { createAnalysisService } from '../src/classify/analysis';
 import { isPingMessage, isGetConsentMessage, isProductRequest, type ConsentResponse, type ProductOperationError } from '../src/shared/messages';
-import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession, saveProduct } from '../src/storage/repo';
+import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession, saveProduct, recordVisit } from '../src/storage/repo';
 import { invalidateConsentWork } from '../src/consent/work';
 import { STORAGE_KEYS } from '../src/storage/keys';
 import { isSettings } from '../src/shared/storage-validation';
@@ -77,21 +77,26 @@ export default defineBackground(() => {
         return;
       }
       if (message.type === 'SAVE_ITEM') {
-        void saveProduct(message.product, message.wait).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
+        void saveProduct(message.product, message.wait, message.devTestWait === true).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
         return true;
       }
       if (message.type === 'PRODUCT_SEEN' || message.type === 'REFINE_PRODUCT') {
         // Per document/frame sessions reject late variants/navigation replies.
         const owner = `${sender.tab?.id ?? 'options'}:${sender.frameId ?? 0}:${sender.documentId ?? sender.url ?? ''}`;
         const task = message.type === 'PRODUCT_SEEN' ? analysis.basic(message.product, owner) : analysis.refine(message.analysisId, owner);
+        // Record the visit after the analysis read history, so this visit does not count as a repeat.
+        if (message.type === 'PRODUCT_SEEN') {
+          const productId = message.product.productId;
+          void task.then(() => recordVisit(productId)).catch(() => {});
+        }
         void task.then(sendResponse, error => sendResponse({ type: 'ERROR', code: error instanceof Error && /consent/i.test(error.message) ? 'CONSENT_REQUIRED' : 'ANALYSIS_FAILED', message: 'Analysis unavailable, revoked or superseded.' } satisfies ProductOperationError));
         return true;
       }
+      // ADD_TO_CART_CLICKED: the page panel handles the click itself; the background only
+      // acknowledges it under consent. It never blocks or changes the store's cart.
       void beginConsentWork().then(work => {
-        // Product extraction/visits/classification handlers are unfinished. Future work
-        // must retain this scope, pass its signal to fetch, reverify, and commit with it.
         work.release();
-        sendResponse({ type: 'ERROR', code: 'NOT_IMPLEMENTED', message: 'Product behavior is not implemented yet.' } satisfies ProductOperationError);
+        sendResponse({ type: 'OK' });
       }, () => sendResponse({ type: 'ERROR', code: 'CONSENT_REQUIRED', message: 'Consent is required for product behavior.' } satisfies ProductOperationError));
       return true;
     }

@@ -2,15 +2,31 @@
 From `extension/`: `npm run typecheck`, `npm test`, `npm run build`.
 From `proxy/`: `npm run typecheck`, `npm run build`.
 
-The unit suite checks cross-category exclusion, unknown-item behavior and malformed
-classification rejection. Real store fixtures and labelled evaluation are not yet added;
-`labels.json` is intentionally empty and is not an evaluation result.
+## Current status (release, 2026-11-10)
+- Unit tests (Vitest): all pass on main. 103 at 68eb093, 105 once PR #10 is merged.
+- Typecheck (extension and proxy) and production build: clean.
+- `npm run fixtures:check`: 5 of 5 saved store pages pass (permissions, content-script injection, reader returns title, price and PKR).
+- `npm run stores:check`: 21 stores in `src/store/stores.ts`; see "Submission checks" below for which passed and which were dropped.
+- Release ZIP (`npx wxt zip`): `extension/.output/unhaul-extension-0.1.0-chrome.zip`, 27 KB, 7 files. Its manifest has only the "storage" permission and 42 host patterns (21 stores, bare and www), no all-sites access, and no proxy origin (built without PROXY_URL). No .env, keys or email addresses inside.
+- AI accuracy: not measured, because no proxy was configured. Keywords got 3 of 4 labelled products (see "Phase 6 measured accuracy").
+- By hand, still to do: fresh-profile demo run, 10 Add to cart clicks per store, badge timing on 10 pages, Network tab check, Chrome restart with a saved item.
 
-Pending functional checks: load unpacked in fresh Chrome profile; sample load twice;
-delete all; supported-store extraction/navigation; merchant Add to cart; reflection
-buttons; saved-item deduplication; restart/overdue handling; AI timeout and privacy.
-No end-to-end readiness or AI accuracy claim is made by this scaffold.
+## Edge cases
+| Case | Covered by |
+| --- | --- |
+| Product with no price | Unit tests (reader returns null price; display shows nothing) |
+| Page that isn't a product | Unit tests (reader returns null; no UI) |
+| Move to another product without reload | Unit tests (reflection experience); manual on live stores |
+| AI slow, offline or invalid reply | Unit tests (timeout and fallback to keywords) |
+| Same product saved twice while waiting | Unit tests (already_saved keeps deadline) |
+| Chrome restarted during a wait | Unit tests (deadline-based countdown); manual native restart |
+| Consent withdrawn or Delete all with a store page open | Unit tests (consent lifecycle) |
+| Load sample items twice | Unit tests (no duplicates) |
+| Item type other, or weak evidence only | Unit tests (no match) |
+| Title containing HTML | Unit tests (rendered as text) |
+| Add to cart still works with the panel open | Manual (NFR-08) |
 
+## Earlier task notes
 ## Scaffold validation — 10 November 2026
 - Extension: TypeScript check passed; production Chrome MV3 build passed.
 - Vitest: 1 test file, 3 tests passed; no failures or skips.
@@ -197,3 +213,15 @@ Only four unchanged labels; not a general benchmark. Their referenced captures a
 - Keyword miss retained: “Monochrome Theme Magnetic Notepads For Fridge” → other/other;
   expected stationery/notebook. No captured real title supports adding that plural
   in this task. Live AI requests: zero; timings and AI accuracy remain unmeasured.
+## Submission checks (2026-11-10)
+- `npm run stores:check` (team laptop, real Chrome): 15 Pakistani stationery, toy, gift and decor
+  stores passed every check except robots.txt, which a checker bug (fixed in PR #5) misreported;
+  they were added to `src/store/stores.ts`. Re-run after the fix to confirm. Failed and left out: alsimba.pk (DNS),
+  babytoys.pk and giftkarte.com (no product link), toobas.pk (bot challenge), artsupplies.pk and
+  fineartsmaterial.pk (product URLs are `/product/`, not `/products/`). A robots.txt wildcard bug
+  marked almost every Shopify store BLOCKED in that first run.
+- `npm run fixtures:check` (Chromium, offline): 5/5 saved fixtures PASS: URL in host_permissions and
+  content matches, content script injected, reader returns title, price and PKR. The Beechtree
+  fixture was removed because the saved page was the homepage.
+- Visit recording: unit tests cover 30-minute dedupe, 30-day pruning and the consent requirement.
+- `npm test`: all tests pass. `tsc --noEmit`: clean. Extension smoke test: PASS.

@@ -1,13 +1,15 @@
 import type { AnalysisResult, Product, SaveResult } from '../shared/types';
 import { WAITS, WAIT_LABELS, type WaitKey } from '../shared/lists';
 import { choosePrompt } from '../match/prompts';
+import { formatPrice } from './price';
 export interface PanelView {
   element: HTMLElement;
   closeButton: HTMLButtonElement;
   dispose(): void;
   update(product: Product, analysis: AnalysisResult | null, error: boolean): void;
 }
-export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey) => Promise<SaveResult>): PanelView {
+const DEV_TEST_OPTION = 'dev-1m';
+export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey, devTestWait?: boolean) => Promise<SaveResult>): PanelView {
   let currentProduct: Product | null = null;
   let productSignature = '';
   let revision = 0;
@@ -26,7 +28,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   image.addEventListener('error', () => { image.hidden = true; });
   const state = document.createElement('p'); state.setAttribute('role', 'status');
   const matches = document.createElement('ul');
-  const basicLabel = document.createElement('p'); basicLabel.className = 'muted'; basicLabel.textContent = 'Basic matching'; basicLabel.hidden = true;
+  const basic = document.createElement('p'); basic.className = 'muted'; basic.textContent = 'Basic matching'; basic.hidden = true;
   const question = document.createElement('p'); question.className = 'question';
   const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save for later'; save.disabled = !saveProduct; save.setAttribute('aria-describedby', 'unhaul-save-note');
   const durationLabel = document.createElement('label'); durationLabel.textContent = 'Reconsider after '; durationLabel.htmlFor = 'unhaul-duration';
@@ -34,17 +36,22 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   for (const key of Object.keys(WAITS) as WaitKey[]) {
     const option = document.createElement('option'); option.value = key; option.textContent = WAIT_LABELS[key]; duration.append(option);
   }
+  // Dev builds only: a 1-minute wait for testing Ready and restarts. Not in WAITS, absent from production.
+  if (import.meta.env.DEV) {
+    const option = document.createElement('option'); option.value = DEV_TEST_OPTION; option.textContent = '1 minute (dev test)'; duration.append(option);
+  }
   durationLabel.append(duration);
   const saveNote = document.createElement('p'); saveNote.id = 'unhaul-save-note'; saveNote.setAttribute('role', 'status'); saveNote.textContent = saveProduct ? '' : 'Save for later is not available in this build yet. Nothing will be saved.';
   save.addEventListener('click', async () => {
     if (!saveProduct || !currentProduct || saving || disposed) return;
     const current = revision;
     const snapshot = structuredClone(currentProduct);
-    const wait = duration.value as WaitKey;
+    const devTestWait = import.meta.env.DEV && duration.value === DEV_TEST_OPTION;
+    const wait = (devTestWait ? '24h' : duration.value) as WaitKey;
     saving = true; save.disabled = true; duration.disabled = true; save.textContent = 'Saving…';
     saveNote.setAttribute('role', 'status'); saveNote.textContent = 'Saving in Unhaul…';
     try {
-      const result = await saveProduct(snapshot, wait);
+      const result = devTestWait ? await saveProduct(snapshot, wait, true) : await saveProduct(snapshot, wait);
       if (disposed || current !== revision) return;
       saveNote.textContent = result.result === 'already_saved'
         ? 'Already saved in Unhaul. Your original deadline is unchanged. This does not change the store’s cart.'
@@ -60,7 +67,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   });
   const continueButton = document.createElement('button'); continueButton.type = 'button'; continueButton.textContent = 'Continue shopping'; continueButton.addEventListener('click', onClose);
   const cartNote = document.createElement('p'); cartNote.className = 'muted'; cartNote.textContent = 'Unhaul does not change the store’s cart, reserve stock or lock prices.';
-  panel.append(header, title, price, image, state, matches, basicLabel, question, durationLabel, save, continueButton, saveNote, cartNote);
+  panel.append(header, title, price, image, state, matches, basic, question, durationLabel, save, continueButton, saveNote, cartNote);
   return {
     element: panel, closeButton: close,
     dispose() { disposed = true; revision++; },
@@ -72,11 +79,8 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
         if (saveProduct) saveNote.textContent = '';
       }
       title.textContent = product.title;
-      price.hidden = product.price === null || !product.currency;
-      price.textContent = price.hidden ? '' : `${product.currency} ${new Intl.NumberFormat('en-US', {
-        maximumFractionDigits: 20,
-      }).format(product.price!)}`;
-      basicLabel.hidden = analysis?.classification.source !== 'keywords';
+      price.textContent = formatPrice(product.price, product.currency);
+      price.hidden = !price.textContent;
       if (product.imageUrl) {
         // Reader validates URLs; still check before assigning a resource attribute.
         try {
@@ -92,6 +96,8 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
         const row = document.createElement('li'); row.textContent = `${match.item.name} — ${match.reason}`; return row;
       });
       matches.replaceChildren(...rows);
+      // Keyword results (no AI yet, or AI unavailable) are labelled so the user knows they are basic.
+      basic.hidden = !analysis || (analysis.phase !== 'basic' && analysis.phase !== 'fallback') || analysis.classification.source !== 'keywords';
       question.textContent = choosePrompt(analysis?.totalMatches ?? 0, product, analysis?.repeatVisit === true);
     },
   };
