@@ -72,3 +72,9 @@ Phase 8 push required merging concurrent main changes. Kept incoming fixtures/he
 files, preserved exact incompatible draft sources in docs/merge-preservation, and
 retained the tested active consent/storage contracts without notification permissions.
 Revalidated the merged active code; no history rewrite or source archive loss.
+
+## Phase 6 gap review — 2026-11-10
+AI assistance added fixture-backed sweater → outerwear and wallet → bag synonyms,
+retained matchItems because core.test.ts uses it, corrected AI documentation and
+added an unchanged-label diagnostic and accuracy CLI. No upstream/provider changes,
+labels edited or credentials added. Measured results are in testing.md.
