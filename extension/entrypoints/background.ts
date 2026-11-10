@@ -13,7 +13,21 @@ export default defineBackground(() => {
       console.error('[Unhaul] Storage initialization failed; existing data retained', error);
     }
   };
-  browser.runtime.onInstalled.addListener(initialize);
+  browser.runtime.onInstalled.addListener(async details => {
+    try {
+      await initializeStorage();
+    } catch (error) {
+      console.error('[Unhaul] Storage initialization failed; existing data retained', error);
+      return;
+    }
+    if (details.reason === 'install') {
+      try {
+        await browser.runtime.openOptionsPage();
+      } catch (error) {
+        console.error('[Unhaul] Could not open the consent page', error);
+      }
+    }
+  });
   browser.runtime.onStartup.addListener(initialize);
 
   browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {

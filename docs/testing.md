@@ -60,3 +60,18 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   display operation errors. No new screens were added.
 - Manual Chrome UI/restart testing was not performed in this task; transport tests
   do not establish native Chrome messaging or live-store behavior.
+
+## Installation consent / requested Phase 3 — 10 November 2026
+- `npm test`: 5 files, 56 tests passed; zero failures/skips.
+- `npm run typecheck` and `npm run build`: passed.
+- New tests cover install versus update/startup, initialization/opening failures,
+  loading/false/missing-default consent, invalid/failed settings and Retry,
+  successful agreement awaiting persistence, duplicate clicks, save failure,
+  Not now without writes, deletion, and revocation during pending reads/agreement.
+- Tests use the existing Vitest infrastructure and mocked extension transport;
+  there is no new testing framework.
+- Native Chrome installation opening and options interaction: unrun. The managed
+  Chromium policy still contains ExtensionInstallBlocklist=["*"]. No policy was
+  changed. These automated results are not proof of native lifecycle/UI behavior.
+- Content-script consent enforcement and product observation/AI remain outside
+  this task. No new permissions, tracking, network calls or unrelated screens.

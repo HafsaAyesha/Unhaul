@@ -182,3 +182,4 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | AI key only in a Cloudflare Worker proxy | A key inside an extension can be read by anyone |
 | 2026-11-10 | Use `unhaul:items` and `unhaul:classification-cache`; initialize version-1 settings with consentGiven false only when absent | Explicit storage-initialization request; preserve existing consent and safely migrate legacy `items` without data loss |
 | 2026-11-10 | Background exclusively owns active extension storage; validated typed client messages and one operation queue; migration prefers namespaced IDs | Explicit storage-wrapper request; prevents lost read-modify-write updates and preserves existing user records |
+| 2026-11-10 | Install-only onboarding and options gating use persisted explicit consent; deletion returns to consent | User requested installation consent phase; product observation and content-script consent enforcement remain separate |

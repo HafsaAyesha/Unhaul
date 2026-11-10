@@ -23,3 +23,10 @@ background-owned queue and dispatcher, typed client, existing options-action wir
 legacy preference policy and focused concurrency/transport tests. Root-level contract
 drafts were preserved. Validation outcomes are in testing.md; browser UI was not
 manually verified in this task.
+
+## Installation consent — 2026-11-10
+AI assistance added install-only options opening, consent markup, a testable options
+controller, loading/error/retry and agreement/revocation handling, plus focused
+lifecycle/controller tests. Copy was checked against inactive observation/AI code.
+No product tracking or permissions were added. Native Chrome checks were unrun;
+results are recorded in testing.md.

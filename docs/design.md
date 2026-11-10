@@ -58,3 +58,23 @@ Delete-all removes every `unhaul:` key, including future cache keys, and legacy
 Later reads do not recreate settings. Explicit initialization or later user writes
 can create data again. Existing options controls disable while pending and show
 errors; no new consent, saved-list or other screen is implemented by this task.
+
+## Installation consent and options gating
+On first installation the background awaits storage initialization, then opens the
+options page. Updates initialize safely without opening onboarding. Browser startup
+still initializes storage. Initialization/opening failures are logged separately.
+
+Options starts with My Items and other application controls hidden in the HTML,
+shows loading while reading settings through the typed client, and reveals My Items
+only after true consent and a successful item read. Missing consent resolves to
+false without a write. Failed reads show a Retry action. Agreement awaits the
+existing setConsent mutation, then rereads settings before displaying items. Not now
+does not write or delete anything. Controls disable during saving and errors are
+announced. A storage-change listener immediately hides/clears rendered items when
+settings disappear or consent becomes false; revision tokens discard stale reads
+and pending agreement results. Deletion returns to consent without initialization.
+
+Copy accurately describes Daraz observation as planned and AI as disabled. This
+phase does not enforce consent in the content script: its existing PING check is
+unchanged, and product collection is not implemented. Actual Chrome installation
+and UI interaction remain unverified in this managed browser environment.

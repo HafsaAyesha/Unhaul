@@ -4,7 +4,7 @@ stationery, home décor, toys, electronics, clothing and more.
 
 ## Status
 Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
-classification and basic matching exist. Store extraction, consent enforcement,
+classification, basic matching and installation consent onboarding exist. Store extraction, content-script consent enforcement,
 reflection integration, saving/timers and AI classification remain to be built.
 Daraz Pakistan is the Phase 2 target. Production host access is restricted to
 `https://www.daraz.pk/*`, with content injection only on `/products/*`.
@@ -34,7 +34,7 @@ before its npm commands. These paths are outside the checkout.
 
 Load `extension/.output/chrome-mv3` through Chrome → Extensions → Developer mode
 → Load unpacked after a production build. Open the extension's options page to
-load fictional sample items or delete local data. See `proxy/README.md` for the worker.
+agree to the consent screen, then load fictional sample items or delete local data. See `proxy/README.md` for the worker.
 
 ## MVP scope
 One verified shopping website with multiple categories; My Items; product extraction;

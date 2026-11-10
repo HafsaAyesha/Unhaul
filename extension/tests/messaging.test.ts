@@ -4,12 +4,13 @@ const mocks = vi.hoisted(() => ({
   addListener: vi.fn(),
   installed: vi.fn(),
   startup: vi.fn(),
+  openOptionsPage: vi.fn().mockResolvedValue(undefined),
   initializeStorage: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn(),
 }));
 vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage }));
 vi.mock('wxt/browser', () => ({ browser: {
-  runtime: { onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
+  runtime: { openOptionsPage: mocks.openOptionsPage, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
 } }));
 vi.stubGlobal('defineBackground', (main: () => void) => main);
 vi.stubGlobal('defineContentScript', (definition: unknown) => definition);
@@ -22,7 +23,7 @@ describe('entrypoint connectivity', () => {
   it('initializes storage on installation and browser startup', async () => {
     const background = (await import('../entrypoints/background')).default as unknown as () => void;
     background();
-    await mocks.installed.mock.calls[0][0]();
+    await mocks.installed.mock.calls[0][0]({ reason: 'install' });
     await mocks.startup.mock.calls[0][0]();
     expect(mocks.initializeStorage).toHaveBeenCalledTimes(2);
   });
@@ -33,8 +34,39 @@ describe('entrypoint connectivity', () => {
     try {
       const background = (await import('../entrypoints/background')).default as unknown as () => void;
       background();
-      await mocks.installed.mock.calls[0][0]();
+      await mocks.installed.mock.calls[0][0]({ reason: 'install' });
       expect(error).toHaveBeenCalledWith('[Unhaul] Storage initialization failed; existing data retained', failure);
+    } finally { error.mockRestore(); }
+  });
+  it('opens onboarding only for first installation after initialization', async () => {
+    const background = (await import('../entrypoints/background')).default as unknown as () => void;
+    background();
+    await mocks.installed.mock.calls[0][0]({ reason: 'update' });
+    await mocks.startup.mock.calls[0][0]();
+    expect(mocks.openOptionsPage).not.toHaveBeenCalled();
+    await mocks.installed.mock.calls[0][0]({ reason: 'install' });
+    expect(mocks.openOptionsPage).toHaveBeenCalledTimes(1);
+    expect(mocks.initializeStorage.mock.invocationCallOrder[2]).toBeLessThan(mocks.openOptionsPage.mock.invocationCallOrder[0]);
+  });
+  it('does not open onboarding if initialization fails', async () => {
+    mocks.initializeStorage.mockRejectedValueOnce(new Error('Read failed'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const background = (await import('../entrypoints/background')).default as unknown as () => void;
+      background();
+      await mocks.installed.mock.calls[0][0]({ reason: 'install' });
+      expect(mocks.openOptionsPage).not.toHaveBeenCalled();
+    } finally { error.mockRestore(); }
+  });
+  it('reports an explicit options-opening failure', async () => {
+    const failure = new Error('Options unavailable');
+    mocks.openOptionsPage.mockRejectedValueOnce(failure);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const background = (await import('../entrypoints/background')).default as unknown as () => void;
+      background();
+      await mocks.installed.mock.calls[0][0]({ reason: 'install' });
+      expect(error).toHaveBeenCalledWith('[Unhaul] Could not open the consent page', failure);
     } finally { error.mockRestore(); }
   });
   it('routes a content PING through the background and logs PONG', async () => {

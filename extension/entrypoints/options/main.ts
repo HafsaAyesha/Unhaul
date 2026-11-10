@@ -1,45 +1,51 @@
+import { browser } from 'wxt/browser';
 import { storageClient } from '../../src/storage/client';
+import { STORAGE_KEYS } from '../../src/storage/keys';
+import { createOptionsController } from './controller';
 import './style.css';
-const list = document.querySelector<HTMLUListElement>('#items')!;
-const status = document.querySelector<HTMLParagraphElement>('#status')!;
-const controls = [...document.querySelectorAll<HTMLButtonElement>('button')];
-let busy = false;
-async function render(): Promise<void> {
-  const items = await storageClient.getItems();
-  const rows = items.map(item => {
-    const li = document.createElement('li');
-    li.textContent = `${item.name} — ${item.itemType}`;
-    return li;
+const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const consent = element<HTMLElement>('consent');
+const app = element<HTMLElement>('app');
+const status = element<HTMLElement>('status');
+const error = element<HTMLElement>('error');
+const retry = element<HTMLButtonElement>('retry');
+let previousScreen = 'loading';
+const controller = createOptionsController(storageClient, state => {
+  const focusHidden = (app.contains(document.activeElement) && state.screen !== 'items')
+    || (consent.contains(document.activeElement) && state.screen !== 'consent');
+  consent.hidden = state.screen !== 'consent';
+  app.hidden = state.screen !== 'items';
+  retry.hidden = state.screen !== 'error';
+  status.textContent = state.status;
+  error.hidden = !state.error;
+  error.textContent = state.error ?? '';
+  app.setAttribute('aria-busy', String(state.busy));
+  consent.setAttribute('aria-busy', String(state.busy));
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button')) button.disabled = state.busy;
+  const rows = state.items.map(item => {
+    const row = document.createElement('li');
+    row.textContent = `${item.name} — ${item.itemType}`;
+    return row;
   });
-  list.replaceChildren(...rows);
-}
-async function perform(action: () => Promise<string>): Promise<void> {
-  if (busy) return;
-  busy = true;
-  controls.forEach(button => { button.disabled = true; });
-  status.setAttribute('role', 'status');
-  status.textContent = 'Working…';
-  try { status.textContent = await action(); }
-  catch (error) {
-    status.setAttribute('role', 'alert');
-    status.textContent = error instanceof Error ? error.message : 'Unhaul could not complete this action. Please retry.';
-  } finally {
-    busy = false;
-    controls.forEach(button => { button.disabled = false; });
+  element<HTMLUListElement>('items').replaceChildren(...rows);
+  if (state.screen !== previousScreen && state.screen !== 'loading') {
+    if (focusHidden || previousScreen === 'loading') {
+      if (state.screen === 'consent') element<HTMLElement>('consent-title').focus();
+      else if (state.screen === 'items') element<HTMLElement>('items-title').focus();
+      else retry.focus();
+    }
   }
-}
-document.querySelector('#load-sample')!.addEventListener('click', () => {
-  void perform(async () => {
-    const count = await storageClient.loadSampleItems();
-    await render();
-    return count ? `Added ${count} sample items.` : 'Sample items are already loaded.';
-  });
+  previousScreen = state.screen;
 });
-document.querySelector('#delete-data')!.addEventListener('click', () => {
-  void perform(async () => {
-    await storageClient.deleteAllUnhaulData();
-    await render();
-    return 'All Unhaul data deleted.';
-  });
-});
-void perform(async () => { await render(); return ''; });
+element('agree').addEventListener('click', () => { void controller.agree(); });
+element('not-now').addEventListener('click', controller.notNow);
+element('load-sample').addEventListener('click', () => { void controller.loadSamples(); });
+element('delete-data').addEventListener('click', () => { void controller.deleteData(); });
+retry.addEventListener('click', () => { void controller.refresh(); });
+const onStorageChanged: Parameters<typeof browser.storage.onChanged.addListener>[0] = (changes, area) => {
+  if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.settings)) {
+    controller.settingsChanged(changes[STORAGE_KEYS.settings].newValue);
+  }
+};
+browser.storage.onChanged.addListener(onStorageChanged);
+void controller.refresh();

@@ -20,3 +20,10 @@ keep save deadlines after restart, show Ready when reopened, handle AI failure,
 and clear all local data. These end-to-end checks have not yet been run.
 No checkout freezing, automatic purchase verification, accounts or cloud sync.
 No AI accuracy, latency or usability target is claimed as achieved.
+
+## Installation consent task
+Implemented: install-only options opening, loading/error/Retry states, explicit
+agreement through the background API, Not now without writes, My Items gating,
+revocation handling and return to consent after deletion. Content-script consent
+enforcement remains a separate task; product observation/AI remain unfinished.
+Native Chrome install/UI behavior is unverified; see testing.md.
