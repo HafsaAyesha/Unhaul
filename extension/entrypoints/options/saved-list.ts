@@ -1,5 +1,6 @@
 import type { SavedItem } from '../../src/shared/types';
 import { remainingLabel } from '../../src/shared/cooling';
+import { formatPrice } from '../../src/ui/price';
 interface SavedClient {
   getSavedItems(): Promise<SavedItem[]>;
   decideSavedItem(id: string, status: 'skipped' | 'purchased'): Promise<SavedItem>;
@@ -13,11 +14,13 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
   let enabled = false; let disposed = false; let revision = 0;
   let timer: ReturnType<typeof setInterval> | undefined;
   let labels: { node: HTMLElement; item: SavedItem }[] = [];
+  const intro = doc.createElement('p'); intro.className = 'saved-intro'; intro.textContent = 'Saved in Unhaul. This does not change the store’s cart.';
   const notice = doc.createElement('p'); notice.setAttribute('role', 'status');
   const error = doc.createElement('p'); error.setAttribute('role', 'alert');
   const retry = doc.createElement('button'); retry.type = 'button'; retry.textContent = 'Retry saved list'; retry.hidden = true;
-  const active = doc.createElement('div'); const history = doc.createElement('div');
-  root.replaceChildren(notice, error, retry, active, history);
+  const active = doc.createElement('div'); const history = doc.createElement('details');
+  root.replaceChildren(intro, notice, error, retry, active, history);
+  history.hidden = true;
   function tick(): void {
     if (!enabled || disposed || doc.visibilityState === 'hidden') return;
     for (const { node, item } of labels) node.textContent = remainingLabel(item);
@@ -35,15 +38,14 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
     } else title.textContent = item.product.title;
     card.append(title);
     const imageURL = safeURL(item.product.imageUrl);
+    const placeholder = () => { const box = doc.createElement('div'); box.className = 'saved-image-placeholder'; box.setAttribute('aria-hidden', 'true'); return box; };
     if (imageURL) {
       const image = doc.createElement('img'); image.src = imageURL; image.alt = ''; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer'; image.crossOrigin = 'anonymous';
-      image.addEventListener('error', () => image.remove()); card.append(image);
-    }
+      image.addEventListener('error', () => image.replaceWith(placeholder())); card.append(image);
+    } else card.append(placeholder());
     const price = doc.createElement('p');
-    if (item.product.price !== null && item.product.currency) {
-      try { price.textContent = new Intl.NumberFormat('en-PK', { style: 'currency', currency: item.product.currency }).format(item.product.price); }
-      catch { price.textContent = `${item.product.currency} ${item.product.price}`; }
-    } else price.textContent = 'Price unavailable';
+    price.textContent = formatPrice(item.product.price, item.product.currency);
+    price.hidden = !price.textContent;
     const saved = doc.createElement('p'); saved.textContent = `Saved ${new Date(item.savedAt).toLocaleString()}`;
     const clock = doc.createElement('p'); clock.className = 'saved-time'; labels.push({ node: clock, item });
     const deadline = doc.createElement('p'); deadline.textContent = `Reconsider ${new Date(item.reconsiderAt ?? item.deadline).toLocaleString()}`;
@@ -83,10 +85,15 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
       if (!enabled || disposed || current !== revision) return;
       const waiting = records.filter(item => item.status === 'waiting');
       const decided = records.filter(item => item.status !== 'waiting');
-      for (const [container, title, items] of [[active, 'Waiting and Ready', waiting], [history, 'Decision history', decided]] as const) {
-        if (!items.length) continue;
-        const heading = doc.createElement('h3'); heading.textContent = title; container.append(heading);
-        items.forEach(item => container.append(itemCard(item)));
+      if (waiting.length) {
+        const heading = doc.createElement('h3'); heading.textContent = 'Waiting and Ready'; active.append(heading);
+        waiting.forEach(item => active.append(itemCard(item)));
+      }
+      history.hidden = !decided.length;
+      if (decided.length) {
+        // Collapsed by default; the user opens it to see past decisions.
+        const summary = doc.createElement('summary'); summary.textContent = `Decision history (${decided.length})`; history.append(summary);
+        decided.forEach(item => history.append(itemCard(item)));
       }
       notice.textContent = records.length ? 'Purchased is self-reported. Unhaul does not verify orders.' : 'No saved items yet. Use Save for later on a supported product page.';
       tick(); syncTimer();

@@ -9,7 +9,7 @@ interface Dependencies {
   scope: ConsentScope;
   analyze(product: Product, publish: (analysis: AnalysisResult) => void, signal: AbortSignal): Promise<void>;
   cancelAnalysis(): void;
-  saveProduct?(product: Product, wait: WaitKey): Promise<SaveResult>;
+  saveProduct?(product: Product, wait: WaitKey, devTestWait?: boolean): Promise<SaveResult>;
   claimAutoOpen(productId: string): Promise<boolean>;
   document?: Document;
   readProduct?: () => Product | null;

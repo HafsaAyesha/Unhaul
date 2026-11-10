@@ -120,7 +120,9 @@ export function getSavedItems(): Promise<SavedItem[]> {
   return queued(() => read(K.saved, [], isSavedItems, 'saved items'));
 }
 /** Atomic save. Waiting/Ready duplicates retain their original snapshot and deadline. */
-export async function saveProduct(product: Product, wait: WaitKey): Promise<SaveResult> {
+/** devTestWait gives a 1-minute deadline, honoured only in dev builds (import.meta.env.DEV is false in production). */
+export const DEV_TEST_WAIT_MS = 60_000;
+export async function saveProduct(product: Product, wait: WaitKey, devTestWait = false): Promise<SaveResult> {
   const generation = currentConsentGeneration();
   const snapshot = structuredClone(product);
   return queued(async () => {
@@ -135,7 +137,7 @@ export async function saveProduct(product: Product, wait: WaitKey): Promise<Save
       return { type: 'SAVE_RESULT', result: 'already_saved', deadline: existing.reconsiderAt ?? existing.deadline, record: existing };
     }
     const savedAt = Date.now();
-    const deadline = savedAt + WAITS[wait];
+    const deadline = savedAt + (devTestWait && import.meta.env.DEV ? DEV_TEST_WAIT_MS : WAITS[wait]);
     const item: SavedItem = { id: crypto.randomUUID(), product: snapshot, wait, savedAt, deadline, reconsiderAt: deadline, status: 'waiting' };
     requireValid([item], isSavedItems, 'saved item');
     await requireConsent(generation); assertCurrentWork(generation);
