@@ -1,9 +1,38 @@
+import { DEFAULT_PURPOSE, ITEM_TYPES, SYNONYMS, type Category, type ItemType } from '../shared/lists';
 import type { Classification } from '../shared/types';
-export function classifyKeywords(title: string): Classification {
-  const text = title.toLowerCase();
-  if (/\b(journal|notebook)\b/.test(text)) return { category: 'stationery', itemType: 'notebook', purpose: 'writing' };
-  if (/\b(headphones|earbuds)\b/.test(text)) return { category: 'electronics', itemType: 'headphones', purpose: 'personal audio' };
-  if (/\bvase\b/.test(text)) return { category: 'home-decor', itemType: 'vase', purpose: 'decoration' };
-  if (/\bpuzzle\b/.test(text)) return { category: 'toys-games', itemType: 'puzzle', purpose: 'play' };
-  return { category: 'other', itemType: 'unknown' };
+
+const CATEGORY_OF = new Map<ItemType, Category>(
+  (Object.entries(ITEM_TYPES) as [Category, readonly ItemType[]][])
+    .flatMap(([category, types]) => types.map(type => [type, category] as [ItemType, Category])),
+);
+
+function escape(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Item type names ("sticky_notes" -> "sticky notes") plus synonyms.
+// Longest phrases first, so "power bank" wins over "bank" and "smartwatch" over "watch".
+const PHRASES: [RegExp, ItemType][] = (() => {
+  const map = new Map<string, ItemType>();
+  for (const type of CATEGORY_OF.keys()) if (type !== 'other') map.set(type.replace(/_/g, ' '), type);
+  for (const [word, type] of Object.entries(SYNONYMS)) map.set(word.toLowerCase(), type);
+  return [...map.entries()]
+    .sort((a, b) => b[0].length - a[0].length)
+    // Whole words only: "pen" never matches "open", "top" never matches "laptop".
+    .map(([phrase, type]) => [new RegExp(`(^|[^a-z0-9])${escape(phrase)}($|[^a-z0-9])`), type]);
+})();
+
+/** Keyword fallback. Unknown products become Other with zero confidence. */
+export function classifyKeywords(title: string, categoryText = ''): Classification {
+  const text = `${title} ${categoryText}`.toLowerCase();
+  const hit = PHRASES.find(([pattern]) => pattern.test(text));
+  const itemType: ItemType = hit ? hit[1] : 'other';
+  return {
+    category: CATEGORY_OF.get(itemType) ?? 'other',
+    itemType,
+    purpose: DEFAULT_PURPOSE[itemType],
+    confidence: hit ? 0.6 : 0,
+    source: 'keywords',
+    classifiedAt: Date.now(),
+  };
 }

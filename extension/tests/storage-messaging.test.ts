@@ -1,3 +1,4 @@
+import { EXAMPLE_CLASSIFICATION, EXAMPLE_SAVED } from '../src/shared/examples';
 import { beforeEach, expect, it, vi } from 'vitest';
 interface TestSender { id?: string; url?: string; }
 import { STORAGE_KEYS as K } from '../src/storage/keys';
@@ -73,10 +74,12 @@ it('rejects malformed background replies', async () => {
 it('validates collection payloads, identities, timestamps, and product URLs', () => {
   const request = (operation: string, value: unknown) => ({ type: 'STORAGE', operation, args: [value] });
   expect(isStorageRequest(request('addItem', { ...sampleItems[0], category: 'invented' }))).toBe(false);
-  expect(isStorageRequest(request('setVisits', [{ productId: 'p1', timestamps: [-1] }]))).toBe(false);
-  expect(isStorageRequest(request('setVisits', [{ productId: 'p1', timestamps: [1] }, { productId: 'p1', timestamps: [2] }]))).toBe(false);
-  const product = { store: 'example.org', id: 'p1', title: 'Notebook', url: 'javascript:alert(1)' };
-  expect(isStorageRequest(request('setSavedItems', [{ id: 'p1', product, savedAt: 1, reconsiderAt: 2, status: 'waiting' }]))).toBe(false);
-  expect(isStorageRequest(request('setClassificationCache', { p: { classification: { category: 'stationery', itemType: 'notebook' }, source: 'invented', cachedAt: 1 } }))).toBe(false);
+  expect(isStorageRequest(request('setVisits', [{ productId: 'p1', times: [-1] }]))).toBe(false);
+  expect(isStorageRequest(request('setVisits', [{ productId: 'p1', times: [1] }, { productId: 'p1', times: [2] }]))).toBe(false);
+  expect(isStorageRequest(request('setSavedItems', [EXAMPLE_SAVED]))).toBe(true);
+  const badUrl = { ...EXAMPLE_SAVED, product: { ...EXAMPLE_SAVED.product, url: 'javascript:alert(1)' } };
+  expect(isStorageRequest(request('setSavedItems', [badUrl]))).toBe(false);
+  expect(isStorageRequest(request('setClassificationCache', { p: EXAMPLE_CLASSIFICATION }))).toBe(true);
+  expect(isStorageRequest(request('setClassificationCache', { p: { ...EXAMPLE_CLASSIFICATION, source: 'invented' } }))).toBe(false);
   expect(isStorageRequest({ type: 'STORAGE', operation: 'clear', args: [] })).toBe(false);
 });

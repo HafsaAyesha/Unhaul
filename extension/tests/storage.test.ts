@@ -1,3 +1,4 @@
+import { EXAMPLE_CLASSIFICATION, EXAMPLE_SAVED } from '../src/shared/examples';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../src/shared/types';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from '../src/storage/keys';
@@ -145,18 +146,18 @@ describe('repository operations and ordering', () => {
   });
   it('round-trips snapshots and replaces instead of merging collections', async () => {
     const { repo } = await import('../src/storage/repo');
-    const saved = { id: 'p1', product: { store: 'example.org', id: 'p1', title: 'Notebook', url: 'https://example.org/products/p1' }, savedAt: 1, reconsiderAt: 2, status: 'waiting' as const };
+    const saved = { ...EXAMPLE_SAVED };
     await repo.setSavedItems([saved]); expect(await repo.getSavedItems()).toEqual([saved]);
     await repo.setSavedItems([]); expect(await repo.getSavedItems()).toEqual([]);
-    await repo.setVisits([{ productId: 'p1', timestamps: [1, 2] }]); expect(await repo.getVisits()).toEqual([{ productId: 'p1', timestamps: [1, 2] }]);
+    await repo.setVisits([{ productId: 'p1', times: [1, 2] }]); expect(await repo.getVisits()).toEqual([{ productId: 'p1', times: [1, 2] }]);
     await repo.setVisits([]); expect(await repo.getVisits()).toEqual([]);
-    const cache = { p1: { classification: { category: 'stationery' as const, itemType: 'notebook' }, source: 'keywords' as const, cachedAt: 1 } };
+    const cache = { p1: EXAMPLE_CLASSIFICATION };
     await repo.setClassificationCache(cache); expect(await repo.getClassificationCache()).toEqual(cache);
     await repo.setClassificationCache({}); expect(await repo.getClassificationCache()).toEqual({});
   });
   it('rejects malformed persisted collections, even when replacing them', async () => {
     const { repo } = await import('../src/storage/repo');
-    data[K.saved] = null; data[K.visits] = [{ productId: 'p', timestamps: ['yesterday'] }]; data[K.classificationCache] = [];
+    data[K.saved] = null; data[K.visits] = [{ productId: 'p', times: ['yesterday'] }]; data[K.classificationCache] = [];
     await expect(repo.getSavedItems()).rejects.toThrow('saved items');
     await expect(repo.setSavedItems([])).rejects.toThrow('saved items');
     await expect(repo.getVisits()).rejects.toThrow('visits');
