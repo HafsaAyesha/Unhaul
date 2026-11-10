@@ -58,6 +58,7 @@ export interface Settings {
   schemaVersion: 1;
   consentGiven: boolean;
   consentAt?: number;
+  cooldownLock?: boolean;
 }
 
 export interface Match {

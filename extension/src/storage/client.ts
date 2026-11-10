@@ -12,6 +12,7 @@ export const storageClient = {
   initializeStorage: async (): Promise<void> => { await call('initializeStorage', []); },
   getSettings: () => call('getSettings', []),
   setConsent: async (value: boolean): Promise<void> => { await call('setConsent', [value]); },
+  setCooldownLock: async (value: boolean): Promise<void> => { await call('setCooldownLock', [value]); },
   getItems: () => call('getItems', []),
   addItem: async (item: OwnedItem): Promise<void> => { await call('addItem', [item]); },
   deleteItem: async (id: string): Promise<void> => { await call('deleteItem', [id]); },

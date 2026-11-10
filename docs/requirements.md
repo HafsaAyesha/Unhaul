@@ -21,6 +21,7 @@ item type and optional purpose. Four-to-five-hour estimate assumes three teammat
 | FR-15 | Save for later 24 h / 3 d / 7 d | Implemented |
 | FR-16 | Cooling-off list survives restart | Implemented; unit tested; native Chrome restart unverified until the demo run |
 | FR-17 | Skip and Purchased | Implemented |
+| FR-18 | Optional cooling-off lock with Unlock anyway | Implemented |
 
 ## Non-functional targets (measured results only)
 
@@ -33,7 +34,7 @@ item type and optional purpose. Four-to-five-hour estimate assumes three teammat
 | NFR-05 | 5 quick-adds in under 60 s | Not measured |
 | NFR-06 | Judge finishes the demo in under 5 min on a fresh browser | Not measured |
 | NFR-07 | 0 requests carrying owned items or history | By code review: the only extension request is POST /classify with title, categoryText and imageUrl, and the release build makes none. Not measured in the Network tab |
-| NFR-08 | Store's Add to cart works 10 out of 10 tries per store | Not measured. Code never calls preventDefault or stopPropagation on store events |
+| NFR-08 | Add to cart works 10/10 when the lock is off or the product isn't cooling off | Not measured. The opt-in lock only holds matching saved products |
 
 The sections below are earlier per-task notes kept for history. The tables above are the current status.
 

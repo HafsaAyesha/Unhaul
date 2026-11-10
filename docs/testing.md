@@ -10,6 +10,7 @@ From `proxy/`: `npm run typecheck`, `npm run build`.
 - Release ZIP (`npx wxt zip`): `extension/.output/unhaul-extension-0.1.0-chrome.zip`, 27 KB, 7 files. Its manifest has only the "storage" permission and 42 host patterns (21 stores, bare and www), no all-sites access, and no proxy origin (built without PROXY_URL). No .env, keys or email addresses inside.
 - AI accuracy: not measured, because no proxy was configured. Keywords got 3 of 4 labelled products (see "Phase 6 measured accuracy").
 - By hand, still to do: fresh-profile demo run, 10 Add to cart clicks per store, badge timing on 10 pages, Network tab check, Chrome restart with a saved item.
+- Cooling-off lock: storage and message tests cover consent, setting, identity/variant, status and deadline gates; UI tests cover locked cancellation, fail-open unknown/off states and per-tab Unlock anyway.
 
 ## Edge cases
 | Case | Covered by |

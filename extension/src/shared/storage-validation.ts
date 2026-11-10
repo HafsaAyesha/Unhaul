@@ -11,7 +11,8 @@ const webURL = (value: unknown) => {
   try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password; } catch { return false; }
 };
 export function isSettings(value: unknown): value is Settings {
-  return record(value) && value.schemaVersion === 1 && typeof value.consentGiven === 'boolean';
+  return record(value) && value.schemaVersion === 1 && typeof value.consentGiven === 'boolean'
+    && (value.cooldownLock === undefined || typeof value.cooldownLock === 'boolean');
 }
 const inList = (list: readonly string[], value: unknown) => typeof value === 'string' && list.includes(value);
 const nullable = <T>(value: unknown, guard: (v: unknown) => v is T | boolean) => value === null || guard(value);

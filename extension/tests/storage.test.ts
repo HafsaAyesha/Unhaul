@@ -1,4 +1,4 @@
-import { EXAMPLE_CLASSIFICATION, EXAMPLE_SAVED } from '../src/shared/examples';
+import { EXAMPLE_CLASSIFICATION, EXAMPLE_PRODUCT, EXAMPLE_SAVED } from '../src/shared/examples';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../src/shared/types';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from '../src/storage/keys';
@@ -28,6 +28,35 @@ describe('storage initialization', () => {
     await initializeStorage();
     expect(data[K.settings]).toEqual({ schemaVersion: 1, consentGiven: true });
     expect(local.set).toHaveBeenCalledTimes(1);
+  });
+
+  describe('cooling-off lock lookup', () => {
+    it('only locks an exact waiting product variant before its deadline', async () => {
+      const saved = { ...EXAMPLE_SAVED, product: { ...EXAMPLE_PRODUCT, variantId: 'blue' }, deadline: 2000, reconsiderAt: 2000, savedAt: 1000 };
+      data[K.settings] = { ...DEFAULT_SETTINGS, consentGiven: true, cooldownLock: true };
+      data[K.saved] = [saved];
+      const { getCooldownLock } = await import('../src/storage/repo');
+      expect((await getCooldownLock({ ...EXAMPLE_PRODUCT, variantId: 'red' }, 1500)).locked).toBe(false);
+      expect((await getCooldownLock({ ...EXAMPLE_PRODUCT, variantId: 'blue' }, 1500)).locked).toBe(true);
+      expect((await getCooldownLock({ ...EXAMPLE_PRODUCT, variantId: 'blue' }, 2000)).locked).toBe(false);
+    });
+
+    it.each([
+      ['lock off', { consentGiven: true, cooldownLock: false }],
+      ['consent missing', { consentGiven: false, cooldownLock: true }],
+    ])('does not lock when %s', async (_label, settings) => {
+      data[K.settings] = { ...DEFAULT_SETTINGS, ...settings };
+      data[K.saved] = [EXAMPLE_SAVED];
+      const { getCooldownLock } = await import('../src/storage/repo');
+      expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.deadline - 1)).locked).toBe(false);
+    });
+
+    it('does not lock skipped or purchased records', async () => {
+      data[K.settings] = { ...DEFAULT_SETTINGS, consentGiven: true, cooldownLock: true };
+      data[K.saved] = [{ ...EXAMPLE_SAVED, status: 'skipped' }, { ...EXAMPLE_SAVED, id: 'purchased', status: 'purchased' }];
+      const { getCooldownLock } = await import('../src/storage/repo');
+      expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.savedAt + 1)).locked).toBe(false);
+    });
   });
   it.each([true, false])('preserves existing consent %s and extra fields', async consentGiven => {
     const existing = { schemaVersion: 1, consentGiven, extra: 'preserve' };

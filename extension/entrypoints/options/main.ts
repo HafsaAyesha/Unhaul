@@ -15,6 +15,7 @@ const app = element<HTMLElement>('app');
 const status = element<HTMLElement>('status');
 const error = element<HTMLElement>('error');
 const retry = element<HTMLButtonElement>('retry');
+const cooldownLock = element<HTMLInputElement>('cooldown-lock');
 if (proxyConfig().url) {
   const aiText = 'This build is configured to request AI classification. When available, refinement sends the public product information described above; failures use local keyword matching.';
   element('ai-state').textContent = aiText;
@@ -24,6 +25,14 @@ const quickAdd = element<HTMLFormElement>('quick-add');
 const categorySelect = element<HTMLSelectElement>('qa-category');
 const typeSelect = element<HTMLSelectElement>('qa-type');
 const purposeSelect = element<HTMLSelectElement>('qa-purpose');
+async function syncCooldownLock(): Promise<void> {
+  try {
+    cooldownLock.checked = (await storageClient.getSettings()).cooldownLock === true;
+  } catch (failure) {
+    error.hidden = false;
+    error.textContent = failure instanceof Error ? failure.message : 'Could not load cooling-off lock setting.';
+  }
+}
 const option = (value: string, text: string) => { const o = document.createElement('option'); o.value = value; o.textContent = text; return o; };
 categorySelect.replaceChildren(...CATEGORIES.map(c => option(c, label(c))));
 purposeSelect.replaceChildren(option('', 'Default for this type'), ...PURPOSES.map(p => option(p, label(p))));
@@ -99,6 +108,14 @@ element('agree').addEventListener('click', () => { void controller.agree(); });
 element('not-now').addEventListener('click', controller.notNow);
 element('load-sample').addEventListener('click', () => { void controller.loadSamples(); });
 element('turn-off').addEventListener('click', () => { void controller.turnOff(); });
+cooldownLock.addEventListener('change', () => {
+  const value = cooldownLock.checked;
+  void storageClient.setCooldownLock(value).catch(failure => {
+    cooldownLock.checked = !value;
+    error.hidden = false;
+    error.textContent = failure instanceof Error ? failure.message : 'Could not save cooling-off lock setting.';
+  });
+});
 quickAdd.addEventListener('submit', event => {
   event.preventDefault(); // our own form, not a store page
   const notes = element<HTMLTextAreaElement>('qa-notes');
@@ -123,6 +140,7 @@ retry.addEventListener('click', () => { void controller.refresh(); });
 const onStorageChanged: Parameters<typeof browser.storage.onChanged.addListener>[0] = (changes, area) => {
   if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.settings)) {
     controller.settingsChanged(changes[STORAGE_KEYS.settings].newValue);
+    void syncCooldownLock();
     void home.refresh();
   }
   if (area === 'local' && Object.hasOwn(changes, STORAGE_KEYS.saved)) {
@@ -137,6 +155,7 @@ const onStorageChanged: Parameters<typeof browser.storage.onChanged.addListener>
 };
 browser.storage.onChanged.addListener(onStorageChanged);
 void controller.refresh();
+void syncCooldownLock();
 
 window.addEventListener('pagehide', () => { savedList.dispose(); dashboard.dispose(); home.dispose(); });
 window.addEventListener('pageshow', event => {

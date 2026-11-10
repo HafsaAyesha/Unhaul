@@ -13,6 +13,7 @@
   <p>When AI classification is enabled, the public product title, category text and image are sent through our classification service to an AI provider. Your owned items, visit history, and saved list are not included.</p>
   <p id="consent-ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
   <p>Unhaul does not read payment details or block checkout.</p>
+  <p>If you turn on the cooling-off lock, Unhaul holds Add to cart for products you saved until their wait ends; you can unlock any time.</p>
   <button id="agree">Agree and enable Unhaul</button>
   <button id="not-now">Not now</button>
 </section>
@@ -50,6 +51,7 @@
       <section data-view="settings" aria-labelledby="settings-title" hidden>
         <h2 id="settings-title" tabindex="-1">Settings</h2>
         <p id="settings-consent">Unhaul is enabled.</p>
+        <label><input id="cooldown-lock" type="checkbox"> Cooling-off lock: hold Add to cart for items I saved until their wait ends (you can always unlock)</label>
         <p id="ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
         <p>What leaves your browser: when AI classification is enabled, only the public product title, category text and image are sent through our classification service to an AI provider. Your owned items, visit history, and saved list are not included.</p>
         <h3>Supported stores</h3><p id="settings-stores"></p>

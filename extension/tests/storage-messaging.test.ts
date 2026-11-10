@@ -58,6 +58,7 @@ it('denies content access to private records and mutations while allowing settin
   expect((await client.getSettings()).consentGiven).toBe(false);
   await expect(client.getItems()).rejects.toThrow('options page');
   await expect(client.setConsent(true)).rejects.toThrow('options page');
+  await expect(client.setCooldownLock(true)).rejects.toThrow('options page');
   expect(await mocks.send({ type: 'PING' })).toEqual({ type: 'PONG' });
   expect(data).toEqual({});
 });

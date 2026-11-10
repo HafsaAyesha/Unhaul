@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser';
 import { createAnalysisService } from '../src/classify/analysis';
 import { isPingMessage, isGetConsentMessage, isProductRequest, type ConsentResponse, type ProductOperationError } from '../src/shared/messages';
-import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession, saveProduct, recordVisit } from '../src/storage/repo';
+import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession, saveProduct, recordVisit, getCooldownLock } from '../src/storage/repo';
 import { invalidateConsentWork } from '../src/consent/work';
 import { STORAGE_KEYS } from '../src/storage/keys';
 import { isSettings } from '../src/shared/storage-validation';
@@ -76,13 +76,17 @@ export default defineBackground(() => {
       );
       return true;
     }
-    if (record(message) && ['PRODUCT_SEEN', 'REFINE_PRODUCT', 'ADD_TO_CART_CLICKED', 'SAVE_ITEM'].includes(String(message.type))) {
+    if (record(message) && ['PRODUCT_SEEN', 'REFINE_PRODUCT', 'ADD_TO_CART_CLICKED', 'SAVE_ITEM', 'CHECK_COOLDOWN'].includes(String(message.type))) {
       if (!isProductRequest(message)) {
         sendResponse({ type: 'ERROR', code: 'INVALID_REQUEST', message: 'Invalid product request.' } satisfies ProductOperationError);
         return;
       }
       if (message.type === 'SAVE_ITEM') {
         void saveProduct(message.product, message.wait, message.devTestWait === true).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
+        return true;
+      }
+      if (message.type === 'CHECK_COOLDOWN') {
+        void getCooldownLock(message.product).then(result => sendResponse({ type: 'COOLDOWN_RESULT', ...result }), error => sendResponse({ type: 'ERROR', code: 'ANALYSIS_FAILED', message: error instanceof Error ? error.message : 'Could not check cooling-off lock.' }));
         return true;
       }
       if (message.type === 'PRODUCT_SEEN' || message.type === 'REFINE_PRODUCT') {

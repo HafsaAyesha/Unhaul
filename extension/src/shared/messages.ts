@@ -7,6 +7,8 @@ import { record, isProduct, isSavedItem, isNonemptyString } from './storage-vali
 
 export type GetConsentMessage = { type: 'GET_CONSENT' };
 export type ConsentResponse = { consentGiven: boolean };
+export type CooldownRequest = { type: 'CHECK_COOLDOWN'; product: Product };
+export type CooldownResponse = { type: 'COOLDOWN_RESULT'; locked: boolean; reconsiderAt?: number; remainingLabel?: string };
 export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED' | 'SAVE_FAILED'; message: string };
 export function isGetConsentMessage(value: unknown): value is GetConsentMessage {
   return record(value) && value.type === 'GET_CONSENT' && Object.keys(value).length === 1;
@@ -18,6 +20,7 @@ export function isConsentResponse(value: unknown): value is ConsentResponse {
 export type Request =
   | { type: 'PING' }
   | GetConsentMessage
+  | CooldownRequest
   | { type: 'PRODUCT_SEEN'; product: Product }
   | { type: 'REFINE_PRODUCT'; analysisId: string }
   | { type: 'CLAIM_PANEL_OPEN'; productId: string }
@@ -27,6 +30,7 @@ export type Request =
 export type Response =
   | { type: 'PONG' }
   | ConsentResponse
+  | CooldownResponse
   | ProductOperationError
   | AnalysisResult
   | { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean }
@@ -37,6 +41,7 @@ export type Response =
 export interface ReplyFor {
   PING: Extract<Response, { type: 'PONG' }>;
   GET_CONSENT: ConsentResponse;
+  CHECK_COOLDOWN: CooldownResponse;
   PRODUCT_SEEN: AnalysisResult;
   REFINE_PRODUCT: AnalysisResult;
   CLAIM_PANEL_OPEN: { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean };
@@ -50,6 +55,7 @@ export async function send<T extends Request['type']>(
 ): Promise<ReplyFor[T]> {
   const reply: unknown = await browser.runtime.sendMessage(req);
   if (req.type === 'GET_CONSENT' && !isConsentResponse(reply)) throw new Error('Invalid consent response.');
+  if (req.type === 'CHECK_COOLDOWN' && (!record(reply) || reply.type !== 'COOLDOWN_RESULT' || typeof reply.locked !== 'boolean')) throw new Error('Invalid cooldown response.');
   if (record(reply) && reply.type === 'ERROR') throw new Error(typeof reply.message === 'string' ? reply.message : 'Product operation denied.');
   if ((req.type === 'PRODUCT_SEEN' || req.type === 'REFINE_PRODUCT') && !isAnalysisResult(reply)) throw new Error('Invalid analysis response.');
   if (req.type === 'CLAIM_PANEL_OPEN' && (!record(reply) || reply.type !== 'PANEL_OPEN_PERMISSION' || typeof reply.allowed !== 'boolean')) throw new Error('Invalid panel permission response.');
@@ -73,7 +79,7 @@ export function isPongMessage(value: unknown): value is Extract<Response, { type
 export type { StorageRequest, StorageResponse, StorageArguments, StorageResults } from './storage-messages';
 export { isStorageRequest, isStorageResponse } from './storage-messages';
 
-export type ProductRequest = Extract<Request, { type: 'PRODUCT_SEEN' | 'REFINE_PRODUCT' | 'ADD_TO_CART_CLICKED' | 'SAVE_ITEM' }>;
+export type ProductRequest = Extract<Request, { type: 'PRODUCT_SEEN' | 'REFINE_PRODUCT' | 'ADD_TO_CART_CLICKED' | 'SAVE_ITEM' | 'CHECK_COOLDOWN' }>;
 export function isProductRequest(value: unknown): value is ProductRequest {
   if (!record(value)) return false;
   switch (value.type) {
@@ -82,6 +88,7 @@ export function isProductRequest(value: unknown): value is ProductRequest {
     case 'ADD_TO_CART_CLICKED': return isNonemptyString(value.productId);
     case 'SAVE_ITEM': return isProduct(value.product) && typeof value.wait === 'string' && Object.hasOwn(WAITS, value.wait)
       && (value.devTestWait === undefined || (value.devTestWait === true && import.meta.env.DEV));
+    case 'CHECK_COOLDOWN': return isProduct(value.product);
     default: return false;
   }
 }

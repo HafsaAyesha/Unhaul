@@ -76,6 +76,13 @@ existing consent and deletion controller actions, with a confirmation step for d
 The sidebar becomes a horizontal navigation bar on narrow screens. No new permissions,
 storage keys, settings fields or network behavior are introduced.
 
+The optional cooling-off lock is off by default and persists as an existing optional
+settings field. When enabled, the background compares the current product's stable
+identity against waiting saved records and returns only a lock result to content.
+Content fails open until that result is available, holds only matching add-to-cart
+intent, and presents an in-memory per-tab Unlock anyway choice without redispatching
+the merchant event.
+
 Options starts with Home and other application controls hidden in the HTML,
 shows loading while reading settings through the typed client, and reveals My Items
 only after true consent and a successful item read. Missing consent resolves to

@@ -5,12 +5,14 @@ import { extractProduct } from '../store/extract';
 import { createBadge, updateBadge } from './badge';
 import { createPanel } from './panel';
 import { REFLECTION_STYLES } from './styles';
+import { savedProductIdentity } from '../shared/cooling';
 interface Dependencies {
   scope: ConsentScope;
   analyze(product: Product, publish: (analysis: AnalysisResult) => void, signal: AbortSignal): Promise<void>;
   cancelAnalysis(): void;
   saveProduct?(product: Product, wait: WaitKey, devTestWait?: boolean): Promise<SaveResult>;
   claimAutoOpen(productId: string): Promise<boolean>;
+  checkCooldown?(product: Product): Promise<{ locked: boolean; reconsiderAt?: number; remainingLabel?: string }>;
   document?: Document;
   readProduct?: () => Product | null;
 }
@@ -33,6 +35,8 @@ export function mountReflectionExperience(deps: Dependencies) {
   let claiming = false;
   let lastSource = '';
   let waitingForSource: string | undefined;
+  const cooldown = new Map<string, { locked: boolean; reconsiderAt?: number; remainingLabel?: string }>();
+  const unlocked = new Set<string>();
   const sourceSignature = () => JSON.stringify([
     ...[...doc.querySelectorAll('script[type="application/ld+json"]')].map(node => node.textContent),
     ...[...doc.querySelectorAll('meta[property^="og:"], meta[property^="product:"]')].map(node => node.getAttribute('content')),
@@ -63,9 +67,26 @@ export function mountReflectionExperience(deps: Dependencies) {
     const shell = doc.createElement('div'); shell.className = 'shell';
     badge = createBadge(); badge.setAttribute('aria-expanded', 'false');
     badge.addEventListener('click', open);
-    panel = createPanel(close, deps.saveProduct);
+    panel = createPanel(close, deps.saveProduct && (async (item, wait, devTestWait) => {
+      const result = await deps.saveProduct!(item, wait, devTestWait);
+      void refreshCooldown(item);
+      return result;
+    }), () => {
+      if (product) unlocked.add(savedProductIdentity(product));
+    });
     shell.append(badge, panel.element); root.append(style, shell);
     doc.body?.append(host);
+  }
+  async function refreshCooldown(item: Product): Promise<void> {
+    if (!deps.checkCooldown) return;
+    try {
+      const result = await deps.checkCooldown(item);
+      const identity = savedProductIdentity(item);
+      cooldown.set(identity, result);
+      if (product && savedProductIdentity(product) === identity && panel && !unlocked.has(identity)) {
+        panel.update(item, analysis, false, result);
+      }
+    } catch { /* Fail open when the optional lock cannot be checked. */ }
   }
   function reset(): void {
     generation++; deps.cancelAnalysis(); analysis = null; fingerprint = ''; product = null; claiming = false; removeView();
@@ -88,7 +109,9 @@ export function mountReflectionExperience(deps: Dependencies) {
     };
     fingerprint = signature; product = next; analysis = null; lastSource = source;
     ensureView(); if (!badge || !panel) return;
+    cooldown.delete(savedProductIdentity(next)); unlocked.delete(savedProductIdentity(next));
     updateBadge(badge, { state: 'loading' }); panel.update(next, null, false);
+    void refreshCooldown(next);
     void deps.analyze(next, result => {
       if (!stillCurrent() || result.productId !== next.productId) return;
       analysis = result;
@@ -116,15 +139,24 @@ export function mountReflectionExperience(deps: Dependencies) {
   }
   function onShopping(event: Event): void {
     navigation();
-    if (!active() || !product || claiming || event.composedPath().includes(host!)) return;
+    if (!active() || !product || !panel || claiming || event.composedPath().includes(host!)) return;
     const target = event.type === 'submit' ? (event as SubmitEvent).submitter
       : event.composedPath().find(node => node instanceof Element && node.matches('button, input[type="submit"], input[type="button"], [role="button"]'));
     if (!(target instanceof Element) || !cartLabel(target) || ('disabled' in target && target.disabled)) return;
     const current = generation;
     const id = product.productId;
+    const identity = savedProductIdentity(product);
+    const lock = cooldown.get(identity);
+    if (lock?.locked === true && !unlocked.has(identity)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      panel.update(product, analysis, false, lock);
+      open();
+      return;
+    }
     const location = doc.location.href;
     claiming = true;
-    // Never cancel, stop, replace or modify the merchant event/cart. This is intent only.
+    // When the opt-in cooling-off lock is off, this remains intent-only and never cancels the merchant event.
     void deps.claimAutoOpen(id).then(allowed => {
       if (allowed && active() && current === generation && product?.productId === id && doc.location.href === location) open();
     }).catch(() => { /* Manual opening stays available when session persistence fails. */ })

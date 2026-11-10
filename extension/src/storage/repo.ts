@@ -5,7 +5,7 @@ import { isSettings, isItems, isOwnedItem, isSavedItems, isVisits, isCache, isNo
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from './keys';
 import { sampleItems } from './sample-items';
 import { WAITS, type WaitKey } from '../shared/lists';
-import { savedProductIdentity } from '../shared/cooling';
+import { coolingState, remainingLabel, savedProductIdentity } from '../shared/cooling';
 import { isProduct } from '../shared/storage-validation';
 import type { Product, SaveResult } from '../shared/types';
 import { createConsentWork, currentConsentGeneration, invalidateConsentWork, isCurrentConsentWork, type ConsentWork } from '../consent/work';
@@ -83,6 +83,34 @@ export function setConsent(consentGiven: boolean): Promise<void> {
     if (typeof consentGiven !== 'boolean') throw new Error('Consent must be a boolean.');
     const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
     await write(K.settings, { ...settings, consentGiven });
+  });
+}
+export function setCooldownLock(value: boolean): Promise<void> {
+  return queued(async () => {
+    if (typeof value !== 'boolean') throw new Error('Cooling-off lock must be a boolean.');
+    const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
+    await write(K.settings, { ...settings, cooldownLock: value });
+  });
+}
+export function getCooldownLock(product: Product, now = Date.now()): Promise<{ locked: boolean; reconsiderAt?: number; remainingLabel?: string }> {
+  return queued(async () => {
+    if (!isProduct(product)) throw new Error('Invalid product.');
+    const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
+    if (settings.consentGiven !== true || settings.cooldownLock !== true) return { locked: false };
+    const records = await read(K.saved, [], isSavedItems, 'saved items');
+    const identity = savedProductIdentity(product);
+    const match = records.find(item => item.status === 'waiting' && savedProductIdentity(item.product) === identity);
+    if (!match) return { locked: false };
+    try {
+      const state = coolingState(match, now);
+      return state.ready ? { locked: false } : {
+        locked: true,
+        reconsiderAt: match.reconsiderAt ?? match.deadline,
+        remainingLabel: remainingLabel(match, now),
+      };
+    } catch {
+      return { locked: false };
+    }
   });
 }
 export function getItems(): Promise<OwnedItem[]> {
@@ -246,7 +274,7 @@ export function deleteAllUnhaulData(): Promise<void> {
   }, false);
 }
 export const repo = {
-  initializeStorage, getSettings, setConsent, getItems, addItem, deleteItem, loadSampleItems,
+  initializeStorage, getSettings, setConsent, setCooldownLock, getCooldownLock, getItems, addItem, deleteItem, loadSampleItems,
   getSavedItems, saveProduct, decideSavedItem, setSavedItems, getVisits, setVisits, recordVisit,
   getClassificationCache, setClassificationCache, deleteAllUnhaulData,
 };

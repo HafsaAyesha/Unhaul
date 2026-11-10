@@ -5,6 +5,7 @@ async function execute(request: StorageRequest): Promise<StorageResults[StorageO
     case 'initializeStorage': await repo.initializeStorage(); return null;
     case 'getSettings': return repo.getSettings();
     case 'setConsent': await repo.setConsent(request.args[0]); return null;
+    case 'setCooldownLock': await repo.setCooldownLock(request.args[0]); return null;
     case 'getItems': return repo.getItems();
     case 'addItem': await repo.addItem(request.args[0]); return null;
     case 'deleteItem': await repo.deleteItem(request.args[0]); return null;

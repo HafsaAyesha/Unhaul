@@ -21,7 +21,9 @@ export default defineContentScript({
               if (!scope.isCurrent()) return Promise.reject(new Error('Consent was revoked.'));
               return send(devTestWait && import.meta.env.DEV ? { type: 'SAVE_ITEM', product, wait, devTestWait: true } : { type: 'SAVE_ITEM', product, wait });
             },
-            claimAutoOpen: async productId => (await send({ type: 'CLAIM_PANEL_OPEN', productId })).allowed });
+            claimAutoOpen: async productId => (await send({ type: 'CLAIM_PANEL_OPEN', productId })).allowed,
+            checkCooldown: product => send({ type: 'CHECK_COOLDOWN', product }),
+          });
         }
         try {
           const reply: unknown = await browser.runtime.sendMessage({ type: 'PING' });

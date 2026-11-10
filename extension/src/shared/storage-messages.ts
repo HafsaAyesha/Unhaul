@@ -1,14 +1,14 @@
 import type { Settings, OwnedItem, SavedItem, VisitRecord, ClassificationCache } from './types';
 import { record, isSettings, isItems, isOwnedItem, isSavedItems, isSavedItem, isVisits, isCache, isNonemptyString } from './storage-validation';
 export interface StorageArguments {
-  initializeStorage: []; getSettings: []; setConsent: [boolean];
+  initializeStorage: []; getSettings: []; setConsent: [boolean]; setCooldownLock: [boolean];
   getItems: []; addItem: [OwnedItem]; deleteItem: [string]; loadSampleItems: [];
   decideSavedItem: [string, 'skipped' | 'purchased'];
   getSavedItems: []; setSavedItems: [SavedItem[]]; getVisits: []; setVisits: [VisitRecord[]];
   getClassificationCache: []; setClassificationCache: [ClassificationCache]; deleteAllUnhaulData: [];
 }
 export interface StorageResults {
-  initializeStorage: null; getSettings: Settings; setConsent: null;
+  initializeStorage: null; getSettings: Settings; setConsent: null; setCooldownLock: null;
   getItems: OwnedItem[]; addItem: null; deleteItem: null; loadSampleItems: number;
   decideSavedItem: SavedItem;
   getSavedItems: SavedItem[]; setSavedItems: null; getVisits: VisitRecord[]; setVisits: null;
@@ -29,7 +29,8 @@ export function isStorageRequest(value: unknown): value is StorageRequest {
   if (value.operation === 'decideSavedItem') return args.length === 2 && isNonemptyString(args[0]) && (args[1] === 'skipped' || args[1] === 'purchased');
   if (args.length !== 1) return false;
   switch (value.operation) {
-    case 'setConsent': return typeof args[0] === 'boolean';
+    case 'setConsent':
+    case 'setCooldownLock': return typeof args[0] === 'boolean';
     case 'addItem': return isOwnedItem(args[0]);
     case 'deleteItem': return isNonemptyString(args[0]);
     case 'setSavedItems': return isSavedItems(args[0]);
