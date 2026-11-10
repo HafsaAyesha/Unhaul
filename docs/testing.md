@@ -45,3 +45,18 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   unsupported settings, repeated/concurrent initialization, lifecycle hooks/errors,
   legacy-item preservation/merging/conflicts and copy/cleanup failures.
 - Browser installation/startup/restart behavior was not manually verified in this task.
+
+## Background-owned storage wrapper — 10 November 2026
+- `npm test`: 4 files, 40 tests passed; zero failures/skips.
+- `npm run typecheck`: passed.
+- `npm run build`: passed; production manifest still requests only storage and the
+  existing Daraz host permission, and existing PING/PONG tests pass.
+- Added checks cover typed-client→background→repository integration using mocked
+  Chrome transport/storage, request/response validation, sender restrictions,
+  sample-load deduplication, duplicate-ID rejection, concurrent mutations, ordered
+  reads behind delayed writes, queue recovery, all collection snapshots, schema
+  rejection, migration conflict preference/retry, and namespaced deletion.
+- Existing options actions now use the typed client, disable pending controls and
+  display operation errors. No new screens were added.
+- Manual Chrome UI/restart testing was not performed in this task; transport tests
+  do not establish native Chrome messaging or live-store behavior.

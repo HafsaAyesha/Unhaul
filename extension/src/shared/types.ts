@@ -66,3 +66,8 @@ export interface Match {
 }
 
 export const DEFAULT_SETTINGS: Settings = { schemaVersion: 1, consentGiven: false };
+
+/** Names used by the storage layer. */
+export type VisitRecord = Visit;
+/** Keyed by productId; each entry already records whether it came from AI or keywords. */
+export type ClassificationCache = Record<string, Classification>;

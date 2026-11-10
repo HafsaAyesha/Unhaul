@@ -51,3 +51,6 @@ export function isPingMessage(value: unknown): value is Extract<Request, { type:
 export function isPongMessage(value: unknown): value is Extract<Response, { type: 'PONG' }> {
   return hasType(value, 'PONG');
 }
+
+export type { StorageRequest, StorageResponse, StorageArguments, StorageResults } from './storage-messages';
+export { isStorageRequest, isStorageResponse } from './storage-messages';
