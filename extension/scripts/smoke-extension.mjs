@@ -10,9 +10,14 @@ assert.equal(manifest.name, 'Unhaul');
 assert.ok(manifest.host_permissions.includes('https://www.daraz.pk/*'));
 if (!process.env.UNHAUL_BUILD_DIR?.endsWith('-dev')) {
   assert.deepEqual(manifest.permissions, ['storage']);
-  assert.deepEqual(manifest.host_permissions, ['https://www.daraz.pk/*']);
+  // Store list lives in src/store/stores.ts: exact hosts only, never <all_urls> or wildcard hosts.
+  assert.ok(manifest.host_permissions.every(p => /^https:\/\/[a-z0-9.-]+\/\*$/.test(p)), 'host_permissions must be exact store hosts');
 }
-if (manifest.content_scripts) assert.deepEqual(manifest.content_scripts[0].matches, ['https://www.daraz.pk/products/*']);
+if (manifest.content_scripts) {
+  const hosts = new Set(manifest.host_permissions.map(p => new URL(p.slice(0, -1)).host));
+  assert.ok(manifest.content_scripts[0].matches.includes('https://www.daraz.pk/products/*'));
+  assert.ok(manifest.content_scripts[0].matches.every(m => /^https:\/\/[a-z0-9.-]+\/products\/\*$/.test(m) && hosts.has(new URL(m.slice(0, -1)).host)));
+}
 const profile = await mkdtemp(resolve(tmpdir(), 'unhaul-test-profile-'));
 let context;
 try {

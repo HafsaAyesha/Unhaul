@@ -5,9 +5,10 @@ import { STORAGE_KEYS } from '../src/storage/keys';
 import { createConsentLifecycle } from '../src/consent/lifecycle';
 import { createAnalysisClient } from '../src/classify/client';
 import { mountReflectionExperience } from '../src/ui/experience';
+import { STORE_PRODUCT_MATCHES } from '../src/store/stores';
 
 export default defineContentScript({
-  matches: ['https://www.daraz.pk/products/*'],
+  matches: STORE_PRODUCT_MATCHES,
   async main(ctx) {
     const gate = createConsentLifecycle({
       requestConsent: () => browser.runtime.sendMessage({ type: 'GET_CONSENT' }),

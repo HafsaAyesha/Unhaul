@@ -1,5 +1,6 @@
 import type { Product } from '../shared/types';
 import { record } from '../shared/storage-validation';
+import { isSupportedStoreHost } from './stores';
 function urlValue(value: unknown, base: string): string | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   try { const url = new URL(value, base); return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; } catch { return null; }
@@ -16,8 +17,12 @@ function flatten(value: unknown): Record<string, unknown>[] {
 }
 /** Structured Product data first, product Open Graph second. No guessed DOM selectors/prices. */
 export function extractProduct(doc: Document, href = doc.location.href): Product | null {
+  return isSupportedStoreHost(new URL(href).hostname) ? readProductPage(doc, href) : null;
+}
+/** The same reader without the store allowlist. scripts/check-stores.mjs uses it to vet candidate stores. */
+export function readProductPage(doc: Document, href = doc.location.href): Product | null {
   const current = new URL(href);
-  if (current.hostname !== 'www.daraz.pk' || !current.pathname.startsWith('/products/')) return null;
+  if (!current.pathname.startsWith('/products/')) return null;
   const meta = (name: string) => doc.querySelector<HTMLMetaElement>(`meta[property="${name}"]`)?.content?.trim() || null;
   const canonical = meta('og:url');
   if (canonical) {
@@ -28,14 +33,19 @@ export function extractProduct(doc: Document, href = doc.location.href): Product
   const nodes = [...doc.querySelectorAll<HTMLScriptElement>('script[type="application/ld+json"]')].flatMap(script => {
     try { return flatten(JSON.parse(script.textContent ?? '')); } catch { return []; }
   });
-  const product = nodes.find(node => Array.isArray(node['@type']) ? node['@type'].includes('Product') : node['@type'] === 'Product');
+  // Shopify themes publish either Product or ProductGroup (variants under hasVariant).
+  const isProduct = (node: Record<string, unknown>) => [node['@type']].flat().some(type => type === 'Product' || type === 'ProductGroup');
+  const product = nodes.find(isProduct);
   if (product?.url) {
     const candidate = urlValue(product.url, href);
     if (!candidate || new URL(candidate).pathname !== current.pathname) return null;
   }
-  const offers = product ? flatten(product.offers) : [];
+  const offers = product ? [...flatten(product.offers), ...flatten(product.hasVariant).flatMap(variant => flatten(variant.offers))] : [];
+  // No variant chosen: use the offer only when every offer has the same price and currency.
+  const samePrice = offers.length > 0 && offers.every(entry => String(entry.price) === String(offers[0].price)
+    && entry.priceCurrency === offers[0].priceCurrency);
   const offer = variantId ? offers.find(entry => String(entry.sku ?? '') === variantId)
-    : offers.length === 1 ? offers[0] : undefined;
+    : samePrice ? offers[0] : undefined;
   const title = typeof product?.name === 'string' ? product.name.trim() : meta('og:title');
   const productEvidence = Boolean(product) || meta('og:type') === 'product' || meta('product:price:amount') !== null;
   if (!productEvidence || !title) return null;
