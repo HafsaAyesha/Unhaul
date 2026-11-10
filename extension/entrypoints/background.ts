@@ -1,4 +1,9 @@
+import { browser } from 'wxt/browser';
+import { isPingMessage } from '../src/shared/messages';
+
 export default defineBackground(() => {
-  // B/C: validate messages and connect classification, matching, storage and timers.
-  console.info('Unhaul background ready');
+  browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
+    if (sender.id !== browser.runtime.id || !isPingMessage(message)) return;
+    sendResponse({ type: 'PONG' });
+  });
 });

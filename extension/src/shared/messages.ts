@@ -1,5 +1,20 @@
 import type { Product, SavedItem } from './types';
+export type PingMessage = { type: 'PING' };
+export type PongMessage = { type: 'PONG' };
+
+function hasType(value: unknown, type: string): boolean {
+  return typeof value === 'object' && value !== null
+    && 'type' in value && value.type === type;
+}
+export function isPingMessage(value: unknown): value is PingMessage {
+  return hasType(value, 'PING');
+}
+export function isPongMessage(value: unknown): value is PongMessage {
+  return hasType(value, 'PONG');
+}
+
 export type Message =
+  | PingMessage
   | { type: 'PRODUCT_VIEWED'; product: Product }
   | { type: 'GET_PRODUCT_ANALYSIS'; product: Product }
   | { type: 'SAVE_FOR_LATER'; product: Product; waitDays: 1 | 3 | 7 }

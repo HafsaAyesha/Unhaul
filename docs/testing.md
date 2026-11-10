@@ -22,3 +22,17 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
   It warned about unavailable Request.cf metadata and used its local fallback.
 - Chrome UI interaction, real store integration and complete MVP flow: unrun.
 - No Cloudflare deployment or GitHub release was performed.
+
+## Phase 2 validation — 10 November 2026
+- Extension typecheck and production build: passed.
+- Vitest: 2 files / 6 tests passed, including content→background PING/PONG using a
+  mocked Chrome transport, malformed-message/sender rejection, and failure logging.
+- WXT dev server: started successfully; generated chrome-mv3-dev output.
+- Production manifest: storage only; host https://www.daraz.pk/*;
+  content script https://www.daraz.pk/products/* only.
+- Real Chromium smoke check: attempted, not passed. Managed extension blocklist
+  prevented worker/injection startup; the check timed out waiting for PONG.
+- Alternative Playwright Chromium installation: blocked by 403 Domain forbidden
+  from cdn.playwright.dev. Native browser messaging remains unverified.
+- Live Daraz request: blocked by proxy 403 CONNECT; live product check is pending.
+- Repeatable browser/manual steps and A/B handoff: phase-2-handoff.md.
