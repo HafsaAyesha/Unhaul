@@ -15,3 +15,11 @@ export const DEFAULT_SETTINGS: Settings = {
   schemaVersion: 1,
   consentGiven: false,
 };
+
+/** Cache keys are stable product identities; entries contain public product classification only. */
+export interface ClassificationCacheEntry {
+  classification: Classification;
+  source: 'ai' | 'keywords';
+  cachedAt: number;
+}
+export type ClassificationCache = Record<string, ClassificationCacheEntry>;

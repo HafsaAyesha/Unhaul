@@ -55,3 +55,9 @@ See `docs/requirements.md` for implementation status and `SUBMISSION.md` for han
 Copy the root `.env.example` to `.env` when needed. `PROXY_URL` and `EXTENSION_TOKEN`
 are reserved for later integration and are not read or bundled by this phase.
 An extension-distributed token cannot be treated as a durable secret.
+
+## Storage development
+All active extension storage access belongs to the background repository. UI/content
+uses `extension/src/storage/client.ts`; do not import repo.ts into an entrypoint
+other than background. See docs/design.md for validation, legacy migration,
+full-snapshot setter semantics and delete-all behavior.

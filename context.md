@@ -114,8 +114,8 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 - `types.ts`: Product (price and wasPrice are `number | null`), Classification, OwnedItem (source sample or manual), SavedItem (id = productId, status waiting, skipped or purchased; Ready is never stored), Visit, Settings (schemaVersion 1, consentGiven), Match.
 - `messages.ts`: PING to PONG; GET_CONSENT to CONSENT; PRODUCT_SEEN to MATCH_RESULT; ADD_TO_CART_CLICKED to OK; SAVE_ITEM to SAVE_RESULT (saved or already_saved, with deadline).
 - `examples.ts`: made-up example records for building and tests.
-- Storage keys (`src/storage/keys.ts`): unhaul:settings, unhaul:items, unhaul:saved, unhaul:visits, unhaul:classification-cache. These names follow the explicit storage-initialization task; broader storage CRUD remains pending.
-- Storage functions: getSettings, saveSettings, getOwned, addOwned, deleteOwned, getSaved, upsertSaved, recordVisit, getCachedClass, setCachedClass, deleteAll.
+- Storage keys (`src/storage/keys.ts`): unhaul:settings, unhaul:items, unhaul:saved, unhaul:visits, unhaul:classification-cache. These names follow the explicit storage tasks.
+- Active storage API: initializeStorage, getSettings, setConsent, getItems, addItem, deleteItem, loadSampleItems, getSavedItems, setSavedItems, getVisits, setVisits, getClassificationCache, setClassificationCache, deleteAllUnhaulData. Background owns the repository; options/content use the typed client. Snapshot setters replace collections and are not atomic incremental updates.
 
 ## 10. Privacy and security
 
@@ -180,5 +180,5 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Generic reader on 5 tested stores, no `<all_urls>` | Same reader works across Shopify stores; fixed list keeps permissions and consent narrow |
 | 2026-11-10 | Install via GitHub Release ZIP, not the Chrome Web Store | Store review can take days |
 | 2026-11-10 | AI key only in a Cloudflare Worker proxy | A key inside an extension can be read by anyone |
-
 | 2026-11-10 | Use `unhaul:items` and `unhaul:classification-cache`; initialize version-1 settings with consentGiven false only when absent | Explicit storage-initialization request; preserve existing consent and safely migrate legacy `items` without data loss |
+| 2026-11-10 | Background exclusively owns active extension storage; validated typed client messages and one operation queue; migration prefers namespaced IDs | Explicit storage-wrapper request; prevents lost read-modify-write updates and preserves existing user records |
