@@ -12,7 +12,7 @@ it('prioritizes owned matches, verified discounts, recorded repeat visits, then 
 it('formats known price and omits missing price or currency without a zero placeholder', async () => {
   const { build } = await import('esbuild');
   const { chromium } = await import('playwright');
-  const bundle = await build({ entryPoints: ['src/ui/panel.ts'], bundle: true, write: false, format: 'iife', globalName: 'PanelTest' });
+  const bundle = await build({ entryPoints: ['src/ui/panel.ts'], bundle: true, write: false, format: 'iife', globalName: 'PanelTest', define: { 'import.meta.env.DEV': 'false' } });
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/lib/chromium/chromium', headless: true });
   try {
     const page = await browser.newPage();
