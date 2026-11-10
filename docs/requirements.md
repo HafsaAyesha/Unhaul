@@ -27,3 +27,12 @@ agreement through the background API, Not now without writes, My Items gating,
 revocation handling and return to consent after deletion. Content-script consent
 enforcement remains a separate task; product observation/AI remain unfinished.
 Native Chrome install/UI behavior is unverified; see testing.md.
+
+## Consent enforcement task
+Implemented: validated GET_CONSENT, fail-closed content startup with timeout,
+storage-change revocation/re-agreement, WXT invalidation cleanup, background
+sensitive-write guards and stale-work generation checks. Product/AI handlers remain
+unfinished and return explicit errors. The gate currently controls only the existing
+connectivity check; it adds no product collection, shopping UI or network requests.
+Native browser verification is unrun. The earlier note that content consent gating
+was a separate task is superseded by this section.

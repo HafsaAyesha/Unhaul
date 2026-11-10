@@ -1,11 +1,19 @@
 import { browser } from 'wxt/browser';
-import { isPingMessage } from '../src/shared/messages';
-import { initializeStorage } from '../src/storage/repo';
+import { isPingMessage, isGetConsentMessage, isProductRequest, type ConsentResponse, type ProductOperationError } from '../src/shared/messages';
+import { initializeStorage, getSettings, beginConsentWork } from '../src/storage/repo';
+import { invalidateConsentWork } from '../src/consent/work';
+import { STORAGE_KEYS } from '../src/storage/keys';
+import { isSettings } from '../src/shared/storage-validation';
 import { dispatchStorage } from '../src/storage/dispatch';
 import { isStorageRequest, type StorageResponse } from '../src/shared/storage-messages';
 import { record } from '../src/shared/storage-validation';
 
 export default defineBackground(() => {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !Object.hasOwn(changes, STORAGE_KEYS.settings)) return;
+    const settings: unknown = changes[STORAGE_KEYS.settings].newValue;
+    if (!isSettings(settings) || settings.consentGiven !== true) invalidateConsentWork();
+  });
   const initialize = async () => {
     try {
       await initializeStorage();
@@ -35,6 +43,30 @@ export default defineBackground(() => {
     if (isPingMessage(message)) {
       sendResponse({ type: 'PONG' });
       return;
+    }
+    if (record(message) && message.type === 'GET_CONSENT') {
+      if (!isGetConsentMessage(message)) {
+        sendResponse({ consentGiven: false } satisfies ConsentResponse);
+        return;
+      }
+      void getSettings().then(
+        settings => sendResponse({ consentGiven: settings.consentGiven === true } satisfies ConsentResponse),
+        () => sendResponse({ consentGiven: false } satisfies ConsentResponse),
+      );
+      return true;
+    }
+    if (record(message) && ['PRODUCT_SEEN', 'ADD_TO_CART_CLICKED', 'SAVE_ITEM'].includes(String(message.type))) {
+      if (!isProductRequest(message)) {
+        sendResponse({ type: 'ERROR', code: 'INVALID_REQUEST', message: 'Invalid product request.' } satisfies ProductOperationError);
+        return;
+      }
+      void beginConsentWork().then(work => {
+        // Product extraction/visits/classification handlers are unfinished. Future work
+        // must retain this scope, pass its signal to fetch, reverify, and commit with it.
+        work.release();
+        sendResponse({ type: 'ERROR', code: 'NOT_IMPLEMENTED', message: 'Product behavior is not implemented yet.' } satisfies ProductOperationError);
+      }, () => sendResponse({ type: 'ERROR', code: 'CONSENT_REQUIRED', message: 'Consent is required for product behavior.' } satisfies ProductOperationError));
+      return true;
     }
     if (!record(message) || message.type !== 'STORAGE') return;
     if (!isStorageRequest(message)) {

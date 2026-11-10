@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  changed: vi.fn(),
+  removeChanged: vi.fn(),
+  getSettings: vi.fn().mockResolvedValue({ schemaVersion: 1, consentGiven: true }),
   addListener: vi.fn(),
   installed: vi.fn(),
   startup: vi.fn(),
@@ -8,8 +11,9 @@ const mocks = vi.hoisted(() => ({
   initializeStorage: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn(),
 }));
-vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage }));
+vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage, getSettings: mocks.getSettings }));
 vi.mock('wxt/browser', () => ({ browser: {
+  storage: { onChanged: { addListener: mocks.changed, removeListener: mocks.removeChanged } },
   runtime: { openOptionsPage: mocks.openOptionsPage, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
 } }));
 vi.stubGlobal('defineBackground', (main: () => void) => main);
@@ -19,6 +23,7 @@ describe('entrypoint connectivity', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.sendMessage.mockReset();
   });
   it('initializes storage on installation and browser startup', async () => {
     const background = (await import('../entrypoints/background')).default as unknown as () => void;
@@ -78,8 +83,8 @@ describe('entrypoint connectivity', () => {
     }));
     const log = vi.spyOn(console, 'info').mockImplementation(() => {});
     try {
-      const content = (await import('../entrypoints/content')).default as unknown as { main: () => Promise<void> };
-      await content.main();
+      const content = (await import('../entrypoints/content')).default as unknown as { main: (ctx: { onInvalidated: ReturnType<typeof vi.fn> }) => Promise<void> };
+      await content.main({ onInvalidated: vi.fn() });
       expect(mocks.sendMessage).toHaveBeenCalledWith({ type: 'PING' });
       expect(log).toHaveBeenCalledWith('[Unhaul] PONG');
     } finally { log.mockRestore(); }
@@ -93,13 +98,43 @@ describe('entrypoint connectivity', () => {
     handler({ type: 'PING' }, { id: 'different-extension' }, respond);
     expect(respond).not.toHaveBeenCalled();
   });
+  it('does nothing beyond consent lookup when consent is denied', async () => {
+    mocks.sendMessage.mockResolvedValueOnce({ consentGiven: false });
+    const content = (await import('../entrypoints/content')).default as unknown as { main: (ctx: { onInvalidated: ReturnType<typeof vi.fn> }) => Promise<void> };
+    const onInvalidated = vi.fn();
+    await content.main({ onInvalidated });
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.sendMessage).toHaveBeenCalledWith({ type: 'GET_CONSENT' });
+    expect(mocks.changed).toHaveBeenCalledTimes(1);
+    onInvalidated.mock.calls[0][0]();
+    expect(mocks.removeChanged).toHaveBeenCalledWith(mocks.changed.mock.calls[0][0]);
+  });
+  it('rechecks consent and starts once when an already-open tab receives agreement', async () => {
+    mocks.sendMessage.mockResolvedValueOnce({ consentGiven: false })
+      .mockResolvedValueOnce({ consentGiven: true }).mockResolvedValueOnce({ type: 'PONG' });
+    const log = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const onInvalidated = vi.fn();
+    try {
+      const content = (await import('../entrypoints/content')).default as unknown as { main: (ctx: { onInvalidated: ReturnType<typeof vi.fn> }) => Promise<void> };
+      await content.main({ onInvalidated });
+      const changed = mocks.changed.mock.calls[0][0];
+      changed({ 'unhaul:settings': { newValue: { schemaVersion: 1, consentGiven: true } } }, 'local');
+      await vi.waitFor(() => expect(log).toHaveBeenCalledWith('[Unhaul] PONG'));
+      expect(mocks.sendMessage.mock.calls.filter(([message]) => message.type === 'PING')).toHaveLength(1);
+      changed({ 'unhaul:settings': { oldValue: { schemaVersion: 1, consentGiven: true } } }, 'local');
+      expect(mocks.sendMessage).toHaveBeenCalledTimes(3);
+      onInvalidated.mock.calls[0][0]();
+      changed({ 'unhaul:settings': { newValue: { schemaVersion: 1, consentGiven: true } } }, 'local');
+      expect(mocks.sendMessage).toHaveBeenCalledTimes(3);
+    } finally { log.mockRestore(); }
+  });
   it('reports messaging failure without logging success', async () => {
-    mocks.sendMessage.mockRejectedValue(new Error('Disconnected'));
+    mocks.sendMessage.mockResolvedValueOnce({ consentGiven: true }).mockRejectedValueOnce(new Error('Disconnected'));
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const log = vi.spyOn(console, 'info').mockImplementation(() => {});
     try {
-      const content = (await import('../entrypoints/content')).default as unknown as { main: () => Promise<void> };
-      await content.main();
+      const content = (await import('../entrypoints/content')).default as unknown as { main: (ctx: { onInvalidated: ReturnType<typeof vi.fn> }) => Promise<void> };
+      await content.main({ onInvalidated: vi.fn() });
       expect(error).toHaveBeenCalledWith('[Unhaul] Background connection failed', expect.any(Error));
       expect(log).not.toHaveBeenCalled();
     } finally { error.mockRestore(); log.mockRestore(); }

@@ -146,6 +146,7 @@ describe('repository operations and ordering', () => {
   });
   it('round-trips snapshots and replaces instead of merging collections', async () => {
     const { repo } = await import('../src/storage/repo');
+    await repo.setConsent(true);
     const saved = { ...EXAMPLE_SAVED };
     await repo.setSavedItems([saved]); expect(await repo.getSavedItems()).toEqual([saved]);
     await repo.setSavedItems([]); expect(await repo.getSavedItems()).toEqual([]);
@@ -187,4 +188,45 @@ it('rejects collection access under an unsupported schema but still permits expl
   await expect(repo.getItems()).rejects.toThrow('Unhaul settings');
   await expect(repo.addItem(sampleItems[0])).rejects.toThrow('Unhaul settings');
   await repo.deleteAllUnhaulData(); expect(data).toEqual({});
+});
+
+it('denies product snapshots without consent while leaving owned-item management available', async () => {
+  const { repo, beginConsentWork } = await import('../src/storage/repo');
+  await expect(beginConsentWork()).rejects.toThrow('Consent');
+  await expect(repo.setSavedItems([])).rejects.toThrow('Consent');
+  await expect(repo.setVisits([])).rejects.toThrow('Consent');
+  await expect(repo.setClassificationCache({})).rejects.toThrow('Consent');
+  expect(data).toEqual({});
+  await repo.addItem(sampleItems[0]); expect(await repo.getItems()).toEqual([sampleItems[0]]);
+});
+it('invalidates asynchronous work on revocation even after re-agreement', async () => {
+  const { repo, beginConsentWork, verifyConsentWork } = await import('../src/storage/repo');
+  await repo.setConsent(true); const work = await beginConsentWork();
+  await verifyConsentWork(work);
+  await repo.setConsent(false); expect(work.signal.aborted).toBe(true);
+  await repo.setConsent(true);
+  await expect(verifyConsentWork(work)).rejects.toThrow('revoked');
+  await expect(repo.setVisits([{ productId: 'p', times: [1] }], work)).rejects.toThrow('revoked');
+  expect(data[K.visits]).toBeUndefined(); work.release();
+});
+it('does not let late results recreate data after deletion, including after re-agreement', async () => {
+  const { repo, beginConsentWork } = await import('../src/storage/repo');
+  await repo.setConsent(true); const work = await beginConsentWork();
+  await repo.deleteAllUnhaulData(); expect(work.signal.aborted).toBe(true);
+  await expect(repo.setClassificationCache({ p: EXAMPLE_CLASSIFICATION }, work)).rejects.toThrow('Consent');
+  expect(data).toEqual({});
+  await repo.setConsent(true);
+  await expect(repo.setClassificationCache({ p: EXAMPLE_CLASSIFICATION }, work)).rejects.toThrow('revoked');
+  expect(data[K.classificationCache]).toBeUndefined();
+  const fresh = await beginConsentWork();
+  await repo.setClassificationCache({ p: EXAMPLE_CLASSIFICATION }, fresh);
+  expect(data[K.classificationCache]).toEqual({ p: EXAMPLE_CLASSIFICATION }); fresh.release();
+});
+it('rejects queued sensitive writes when deletion invalidates their generation', async () => {
+  const { repo } = await import('../src/storage/repo');
+  await repo.setConsent(true);
+  const write = repo.setVisits([{ productId: 'p', times: [1] }]);
+  const deletion = repo.deleteAllUnhaulData();
+  const [result] = await Promise.allSettled([write, deletion]);
+  expect(result.status).toBe('rejected'); expect(data).toEqual({});
 });

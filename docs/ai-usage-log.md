@@ -30,3 +30,10 @@ controller, loading/error/retry and agreement/revocation handling, plus focused
 lifecycle/controller tests. Copy was checked against inactive observation/AI code.
 No product tracking or permissions were added. Native Chrome checks were unrun;
 results are recorded in testing.md.
+
+## Consent enforcement — 2026-11-10
+AI assistance added consent contracts, background denial/unfinished-operation
+responses, content lifecycle cleanup/timeout, and queued consent/generation guards.
+Focused tests cover failure, revocation, late results, re-agreement and deletion.
+Existing browser smoke instructions were updated; native browser checks remain
+unrun under the managed extension blocklist. Results are in testing.md.

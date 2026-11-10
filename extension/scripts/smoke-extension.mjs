@@ -30,15 +30,28 @@ try {
   const page = await context.newPage();
   const logs = [];
   page.on('console', message => logs.push(message.text()));
-  const pong = page.waitForEvent('console', { predicate: message => message.text() === '[Unhaul] PONG', timeout: 15000 });
   await page.goto('https://www.daraz.pk/products/unhaul-fixture-i123.html');
-  await pong;
-  console.log('PASS: product content script received and logged [Unhaul] PONG');
+  await page.waitForTimeout(3500);
+  assert.equal(logs.includes('[Unhaul] PONG'), false, 'No connectivity behavior before consent');
   const extensionId = new URL(worker.url()).host;
   const options = await context.newPage();
   await options.goto(`chrome-extension://${extensionId}/options.html`);
-  await options.locator('h1').filter({ hasText: 'Unhaul' }).waitFor();
-  console.log('PASS: extension options page loaded');
+  await options.locator('#consent').waitFor({ state: 'visible' });
+  assert.equal(await options.locator('#app').isVisible(), false);
+  await options.locator('#not-now').click();
+  assert.equal(await options.locator('#app').isVisible(), false);
+  const pong = page.waitForEvent('console', { predicate: message => message.text() === '[Unhaul] PONG', timeout: 15000 });
+  await options.locator('#agree').click();
+  await pong;
+  await options.locator('#app').waitFor({ state: 'visible' });
+  console.log('PASS: no PONG before agreement; already-open product receives PONG after agreement');
+  await options.locator('#delete-data').click();
+  await options.locator('#consent').waitFor({ state: 'visible' });
+  const beforeReload = logs.filter(log => log === '[Unhaul] PONG').length;
+  await page.reload();
+  await page.waitForTimeout(3500);
+  assert.equal(logs.filter(log => log === '[Unhaul] PONG').length, beforeReload);
+  console.log('PASS: deleting consent hides options and suppresses connectivity after reload');
   // A non-product page and another origin must not receive the content script.
   for (const url of ['https://www.daraz.pk/catalog/', 'https://example.org/products/not-supported']) {
     const other = await context.newPage();

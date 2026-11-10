@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS, type Settings, type OwnedItem, type SavedItem, type V
 import { isSettings, isItems, isOwnedItem, isSavedItems, isVisits, isCache, isNonemptyString, requireValid } from '../shared/storage-validation';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from './keys';
 import { sampleItems } from './sample-items';
+import { createConsentWork, currentConsentGeneration, invalidateConsentWork, isCurrentConsentWork, type ConsentWork } from '../consent/work';
 
 // Reads join the same queue so acknowledged writes/deletion are observed in order.
 // Only the background imports this module, giving all extension contexts one owner.
@@ -47,7 +48,33 @@ export function initializeStorage(): Promise<void> {
 export function getSettings(): Promise<Settings> {
   return queued(() => read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings'));
 }
+function assertCurrentWork(generation: number, work?: ConsentWork): void {
+  if (generation !== currentConsentGeneration() || (work && !isCurrentConsentWork(work))) {
+    throw new Error('Consent is required or this operation was revoked.');
+  }
+}
+/** Guard runs inside the storage queue immediately before sensitive work/commit. */
+async function requireConsent(generation: number, work?: ConsentWork): Promise<void> {
+  const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
+  if (settings.consentGiven !== true) {
+    throw new Error('Consent is required or this operation was revoked.');
+  }
+  assertCurrentWork(generation, work);
+}
+export function beginConsentWork(): Promise<ConsentWork> {
+  const generation = currentConsentGeneration();
+  return queued(async () => {
+    await requireConsent(generation);
+    assertCurrentWork(generation);
+    return createConsentWork();
+  });
+}
+export function verifyConsentWork(work: ConsentWork): Promise<void> {
+  return queued(() => requireConsent(work.generation, work));
+}
+
 export function setConsent(consentGiven: boolean): Promise<void> {
+  if (consentGiven === false) invalidateConsentWork();
   return queued(async () => {
     if (typeof consentGiven !== 'boolean') throw new Error('Consent must be a boolean.');
     const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
@@ -89,10 +116,13 @@ export function getSavedItems(): Promise<SavedItem[]> {
   return queued(() => read(K.saved, [], isSavedItems, 'saved items'));
 }
 /** Full-snapshot replacement, not an incremental merge. */
-export function setSavedItems(records: SavedItem[]): Promise<void> {
+export function setSavedItems(records: SavedItem[], work?: ConsentWork): Promise<void> {
+  const generation = work?.generation ?? currentConsentGeneration();
   return queued(async () => {
     requireValid(records, isSavedItems, 'saved items');
     await read(K.saved, [], isSavedItems, 'saved items');
+    await requireConsent(generation, work);
+    assertCurrentWork(generation, work);
     await write(K.saved, records);
   });
 }
@@ -100,10 +130,13 @@ export function getVisits(): Promise<VisitRecord[]> {
   return queued(() => read(K.visits, [], isVisits, 'visits'));
 }
 /** Full-snapshot replacement, not an incremental merge. */
-export function setVisits(records: VisitRecord[]): Promise<void> {
+export function setVisits(records: VisitRecord[], work?: ConsentWork): Promise<void> {
+  const generation = work?.generation ?? currentConsentGeneration();
   return queued(async () => {
     requireValid(records, isVisits, 'visits');
     await read(K.visits, [], isVisits, 'visits');
+    await requireConsent(generation, work);
+    assertCurrentWork(generation, work);
     await write(K.visits, records);
   });
 }
@@ -111,14 +144,18 @@ export function getClassificationCache(): Promise<ClassificationCache> {
   return queued(() => read(K.classificationCache, {}, isCache, 'classification cache'));
 }
 /** Full-snapshot replacement, not an incremental merge. */
-export function setClassificationCache(cache: ClassificationCache): Promise<void> {
+export function setClassificationCache(cache: ClassificationCache, work?: ConsentWork): Promise<void> {
+  const generation = work?.generation ?? currentConsentGeneration();
   return queued(async () => {
     requireValid(cache, isCache, 'classification cache');
     await read(K.classificationCache, {}, isCache, 'classification cache');
+    await requireConsent(generation, work);
+    assertCurrentWork(generation, work);
     await write(K.classificationCache, cache);
   });
 }
 export function deleteAllUnhaulData(): Promise<void> {
+  invalidateConsentWork();
   return queued(async () => {
     const data = await browser.storage.local.get(null);
     const keys = Object.keys(data).filter(key => key.startsWith('unhaul:') || key === LEGACY_ITEMS_KEY);

@@ -112,7 +112,7 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 - Purposes: writing, organizing, decoration, lighting, personal_audio, charging, play, wearing, carrying, other.
 - Item types: start from the brief's list, plus mug and paper_cutter. Add more only by updating lists.ts.
 - `types.ts`: Product (price and wasPrice are `number | null`), Classification, OwnedItem (source sample or manual), SavedItem (id = productId, status waiting, skipped or purchased; Ready is never stored), Visit, Settings (schemaVersion 1, consentGiven), Match.
-- `messages.ts`: PING to PONG; GET_CONSENT to CONSENT; PRODUCT_SEEN to MATCH_RESULT; ADD_TO_CART_CLICKED to OK; SAVE_ITEM to SAVE_RESULT (saved or already_saved, with deadline).
+- `messages.ts`: PING to PONG; GET_CONSENT to {consentGiven: boolean}; PRODUCT_SEEN to MATCH_RESULT; ADD_TO_CART_CLICKED to OK; SAVE_ITEM to SAVE_RESULT (saved or already_saved, with deadline).
 - `examples.ts`: made-up example records for building and tests.
 - Storage keys (`src/storage/keys.ts`): unhaul:settings, unhaul:items, unhaul:saved, unhaul:visits, unhaul:classification-cache. These names follow the explicit storage tasks.
 - Active storage API: initializeStorage, getSettings, setConsent, getItems, addItem, deleteItem, loadSampleItems, getSavedItems, setSavedItems, getVisits, setVisits, getClassificationCache, setClassificationCache, deleteAllUnhaulData. Background owns the repository; options/content use the typed client. Snapshot setters replace collections and are not atomic incremental updates.
@@ -183,3 +183,4 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Use `unhaul:items` and `unhaul:classification-cache`; initialize version-1 settings with consentGiven false only when absent | Explicit storage-initialization request; preserve existing consent and safely migrate legacy `items` without data loss |
 | 2026-11-10 | Background exclusively owns active extension storage; validated typed client messages and one operation queue; migration prefers namespaced IDs | Explicit storage-wrapper request; prevents lost read-modify-write updates and preserves existing user records |
 | 2026-11-10 | Install-only onboarding and options gating use persisted explicit consent; deletion returns to consent | User requested installation consent phase; product observation and content-script consent enforcement remain separate |
+| 2026-11-10 | Consent gate fails closed in content and background; revocation invalidates async work across deletion/re-agreement | Requested Phase 4; unfinished product operations return explicit errors and must use the documented scope/commit guard |

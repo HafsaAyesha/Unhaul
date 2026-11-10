@@ -78,3 +78,18 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
 - After merging the teammate's Phase 3 shared-contract updates from main: reran
   the complete suite (5 files, 59 tests passed), typecheck and production build;
   all passed. Onboarding uses the merged active contracts without replacing them.
+
+## Consent enforcement / requested Phase 4 — 10 November 2026
+- `npm test`: 6 files, 82 tests passed; zero failures/skips.
+- `npm run typecheck` and `npm run build`: passed.
+- Production permissions and store matching are unchanged; PING/PONG remains tested.
+- New checks cover malformed/false/missing consent, rejected and timed-out requests,
+  deduplicated startup, cleanup/abort, late results, WXT invalidation, agreement in
+  an open tab, GET_CONSENT failure behavior, denied/unfinished product operations,
+  sensitive-write guards, deletion races and old work after re-agreement.
+- Existing browser smoke script now requires agreement before PONG and checks
+  deletion suppresses subsequent startup. It remains unrun under the managed
+  Chromium extension blocklist; native Chrome/live-store behavior is unverified.
+- No product extraction, shopping UI/observer, visit pipeline or AI integration was
+  added. Cleanup tests use registered test resources; real shopping components
+  must use the documented scope cleanup/abort hooks when implemented.

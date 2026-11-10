@@ -4,11 +4,13 @@ stationery, home décor, toys, electronics, clothing and more.
 
 ## Status
 Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
-classification, basic matching and installation consent onboarding exist. Store extraction, content-script consent enforcement,
+classification, basic matching and installation consent onboarding exist. Store extraction,
 reflection integration, saving/timers and AI classification remain to be built.
 Daraz Pakistan is the Phase 2 target. Production host access is restricted to
 `https://www.daraz.pk/*`, with content injection only on `/products/*`.
-The content script performs a PING/PONG connectivity check only.
+The content script asks for consent first and performs its PING/PONG connectivity
+check only after literal true consent. It stops on revocation and resumes after
+agreement in an already-open supported tab.
 Live store extraction is not verified.
 No product tracking or external AI calls are currently enabled.
 

@@ -44,3 +44,10 @@ Phase 2's browser acceptance criterion remains pending despite passing unit/buil
 To finish here, allow the Playwright download/redirect domains and www.daraz.pk in
 environment settings, or perform the manual steps on a Chrome profile that permits
 unpacked extensions. No teammate notifications were sent outside this repository.
+
+## Consent gate update
+PONG now requires explicit consent. Open the extension options, agree, then use the
+supported product tab; already-open product tabs respond to agreement without a
+reload. Deletion/revocation stops content behavior. The browser smoke script now
+checks denied startup, agreement, and deletion; it still uses synthetic store HTML
+and is not evidence of live merchant integration.

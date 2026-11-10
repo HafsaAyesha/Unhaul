@@ -78,3 +78,46 @@ Copy accurately describes Daraz observation as planned and AI as disabled. This
 phase does not enforce consent in the content script: its existing PING check is
 unchanged, and product collection is not implemented. Actual Chrome installation
 and UI interaction remain unverified in this managed browser environment.
+
+## Consent enforcement — requested Phase 4
+GET_CONSENT now responds with {consentGiven: boolean}. Only a literal boolean true
+allows content startup. Missing/invalid settings, read failures, malformed responses,
+message rejection and a three-second consent timeout all deny startup. PING/PONG
+remains available in the background; the content connectivity check runs only after
+consent. No product reader, shopping observer, UI or AI pipeline was added.
+
+Before consent only a lightweight storage-change listener is registered. Content
+revocation stops its lifecycle immediately, aborts its signal, invalidates pending
+results and invokes registered cleanups. Future mounts, observers and shopping-event
+listeners must register cleanup using scope.onCleanup, fetch must use scope.signal,
+and asynchronous continuations must check scope.isCurrent. Cleanup also runs on
+WXT context invalidation and the storage listener is removed. An already-open tab
+can initialize safely on agreement without a reload; concurrent startup is deduped.
+The existing connectivity check cannot be physically cancelled, but late results
+are discarded and no late PONG is logged after revocation.
+
+Background enforcement is independent of the content gate. GET_CONSENT reads through
+the repository and fails closed. PRODUCT_SEEN, ADD_TO_CART_CLICKED and SAVE_ITEM
+validate their requests and acquire a consent work scope before responding with an
+explicit NOT_IMPLEMENTED error; they do not currently collect or classify anything.
+Onboarding/settings and owned-item management remain available without consent.
+
+The repository's setVisits, setClassificationCache and setSavedItems recheck consent
+and the generation immediately before writing within the existing queue. Revocation
+and delete-all invalidate outstanding background work immediately when called;
+settings-removal/false/malformed storage events also invalidate it. Queued writes
+captured before invalidation fail. Deletion runs after any already-issued storage
+write, then removes all Unhaul records, so an in-flight commit cannot outlive deletion.
+Reads never recreate settings. New explicit user operations after fresh consent are
+allowed; old work tokens remain invalid even after re-agreement.
+
+Future asynchronous product handlers must call beginConsentWork before processing,
+use work.signal for cancellable requests, call verifyConsentWork before using late
+results, pass the same work token into a sensitive setter, and release in finally.
+The setters verify again inside their queue at commit time. Tokens are background
+objects and cannot be supplied through content/storage messages. The promise queue
+must not be held across network requests. Add atomic background operations for
+incremental visits/cache updates rather than read-modify-write snapshot messages.
+AI, actual product extraction, UI cleanup with real mounted shopping components and
+native Chrome behavior remain unverified/unfinished; this task provides their guard
+and lifecycle integration points rather than pretending those features exist.

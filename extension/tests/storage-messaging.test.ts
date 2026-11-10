@@ -7,7 +7,7 @@ import { isStorageRequest } from '../src/shared/storage-messages';
 type Handler = (request: unknown, sender: TestSender, respond: (reply: unknown) => void) => unknown;
 const mocks = vi.hoisted(() => ({ get: vi.fn(), set: vi.fn(), remove: vi.fn(), send: vi.fn(), listen: vi.fn() }));
 vi.mock('wxt/browser', () => ({ browser: {
-  storage: { local: { get: mocks.get, set: mocks.set, remove: mocks.remove } },
+  storage: { onChanged: { addListener: vi.fn() }, local: { get: mocks.get, set: mocks.set, remove: mocks.remove } },
   runtime: { id: 'unhaul', getURL: (path: string) => `chrome-extension://unhaul/${path.replace(/^\//, '')}`,
     sendMessage: mocks.send, onMessage: { addListener: mocks.listen },
     onInstalled: { addListener: vi.fn() }, onStartup: { addListener: vi.fn() } },
@@ -82,4 +82,31 @@ it('validates collection payloads, identities, timestamps, and product URLs', ()
   expect(isStorageRequest(request('setClassificationCache', { p: EXAMPLE_CLASSIFICATION }))).toBe(true);
   expect(isStorageRequest(request('setClassificationCache', { p: { ...EXAMPLE_CLASSIFICATION, source: 'invented' } }))).toBe(false);
   expect(isStorageRequest({ type: 'STORAGE', operation: 'clear', args: [] })).toBe(false);
+});
+it('answers GET_CONSENT with literal booleans and fails closed on errors/malformed requests', async () => {
+  expect(await mocks.send({ type: 'GET_CONSENT' })).toEqual({ consentGiven: false });
+  expect(data).toEqual({});
+  const { storageClient: client } = await import('../src/storage/client');
+  await client.setConsent(true);
+  expect(await mocks.send({ type: 'GET_CONSENT' })).toEqual({ consentGiven: true });
+  expect(await mocks.send({ type: 'GET_CONSENT', consentGiven: true })).toEqual({ consentGiven: false });
+  mocks.get.mockRejectedValueOnce(new Error('Unavailable'));
+  expect(await mocks.send({ type: 'GET_CONSENT' })).toEqual({ consentGiven: false });
+});
+it('guards product messages independently and does not pretend unfinished operations work', async () => {
+  const { EXAMPLE_PRODUCT } = await import('../src/shared/examples');
+  sender.url = 'https://www.daraz.pk/products/example';
+  const request = { type: 'PRODUCT_SEEN', product: EXAMPLE_PRODUCT };
+  expect(await mocks.send(request)).toMatchObject({ type: 'ERROR', code: 'CONSENT_REQUIRED' });
+  expect(await mocks.send({ type: 'PRODUCT_SEEN', product: {} })).toMatchObject({ code: 'INVALID_REQUEST' });
+  data[K.settings] = { schemaVersion: 1, consentGiven: true };
+  expect(await mocks.send(request)).toMatchObject({ type: 'ERROR', code: 'NOT_IMPLEMENTED' });
+  expect(Object.keys(data)).toEqual([K.settings]);
+});
+it('denies sensitive snapshot messages without consent and still allows deletion/settings', async () => {
+  const { storageClient: client } = await import('../src/storage/client');
+  await expect(client.setVisits([])).rejects.toThrow('Consent');
+  await expect(client.setClassificationCache({})).rejects.toThrow('Consent');
+  await client.deleteAllUnhaulData(); expect(data).toEqual({});
+  await client.setConsent(true); await client.setVisits([]); expect(data[K.visits]).toEqual([]);
 });
