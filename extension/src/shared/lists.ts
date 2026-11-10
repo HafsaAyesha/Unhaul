@@ -121,6 +121,7 @@ export const SYNONYMS: Record<string, ItemType> = {
   shirt: 'top', kurta: 'top', kameez: 'top', top: 'top',
   trouser: 'bottoms', trousers: 'bottoms', pants: 'bottoms', jeans: 'bottoms',
   jacket: 'outerwear', coat: 'outerwear', hoodie: 'outerwear', shawl: 'outerwear',
+  shawls: 'outerwear', dupatta: 'outerwear', stole: 'outerwear', scarf: 'outerwear', cardigan: 'outerwear',
   shoes: 'shoes', sneakers: 'shoes', sandals: 'shoes', heels: 'shoes',
   bag: 'bag', handbag: 'bag', backpack: 'bag', tote: 'bag',
   necklace: 'jewellery', earrings: 'jewellery', bracelet: 'jewellery',
