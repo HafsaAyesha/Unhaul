@@ -7,15 +7,25 @@ const mocks = vi.hoisted(() => ({
   addListener: vi.fn(),
   installed: vi.fn(),
   startup: vi.fn(),
+  actionClicked: vi.fn(),
+  permissionContains: vi.fn().mockResolvedValue(false),
+  getAllPermissions: vi.fn().mockResolvedValue({ origins: [] }),
+  getRegisteredContentScripts: vi.fn().mockResolvedValue([]),
+  unregisterContentScripts: vi.fn(),
+  registerContentScripts: vi.fn(),
+  tabsCreate: vi.fn().mockResolvedValue({}),
   openOptionsPage: vi.fn().mockResolvedValue(undefined),
   initializeStorage: vi.fn().mockResolvedValue(undefined),
   sendMessage: vi.fn(),
 }));
 vi.mock('../src/storage/repo', () => ({ initializeStorage: mocks.initializeStorage, getSettings: mocks.getSettings }));
 vi.mock('wxt/browser', () => ({ browser: {
-  tabs: { onRemoved: { addListener: vi.fn() } },
+  tabs: { onRemoved: { addListener: vi.fn() }, create: mocks.tabsCreate },
+  action: { onClicked: { addListener: mocks.actionClicked } },
+  permissions: { onAdded: { addListener: vi.fn() }, onRemoved: { addListener: vi.fn() }, contains: mocks.permissionContains, getAll: mocks.getAllPermissions },
+  scripting: { getRegisteredContentScripts: mocks.getRegisteredContentScripts, unregisterContentScripts: mocks.unregisterContentScripts, registerContentScripts: mocks.registerContentScripts },
   storage: { session: { get: async () => ({}), set: async () => {}, remove: async () => {} }, onChanged: { addListener: mocks.changed, removeListener: mocks.removeChanged } },
-  runtime: { openOptionsPage: mocks.openOptionsPage, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage },
+  runtime: { openOptionsPage: mocks.openOptionsPage, getURL: (path: string) => `chrome-extension://unhaul/${path}`, onInstalled: { addListener: mocks.installed }, onStartup: { addListener: mocks.startup }, id: 'unhaul-test', onMessage: { addListener: mocks.addListener }, sendMessage: mocks.sendMessage, getManifest: () => ({ content_scripts: [{ js: ['content.js'] }] }) },
 } }));
 vi.stubGlobal('defineBackground', (main: () => void) => main);
 vi.stubGlobal('defineContentScript', (definition: unknown) => definition);
@@ -32,6 +42,15 @@ describe('entrypoint connectivity', () => {
     await mocks.installed.mock.calls[0][0]({ reason: 'install' });
     await mocks.startup.mock.calls[0][0]();
     expect(mocks.initializeStorage).toHaveBeenCalledTimes(2);
+  });
+  it('routes the toolbar action to the custom-site prompt for an ungranted HTTPS tab', async () => {
+    const background = (await import('../entrypoints/background')).default as unknown as () => void;
+    background();
+    const onClicked = mocks.actionClicked.mock.calls[0][0] as (tab: { url: string }) => void;
+    onClicked({ url: 'https://example.com/products/item' });
+    await vi.waitFor(() => expect(mocks.tabsCreate).toHaveBeenCalledWith({
+      url: 'chrome-extension://unhaul//options.html#add-site=https%3A%2F%2Fexample.com',
+    }));
   });
   it('reports lifecycle initialization failures explicitly', async () => {
     const failure = new Error('Storage unavailable');

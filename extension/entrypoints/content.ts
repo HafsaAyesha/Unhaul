@@ -5,7 +5,9 @@ import { STORAGE_KEYS } from '../src/storage/keys';
 import { createConsentLifecycle } from '../src/consent/lifecycle';
 import { createAnalysisClient } from '../src/classify/client';
 import { mountReflectionExperience } from '../src/ui/experience';
-import { STORE_PRODUCT_MATCHES } from '../src/store/stores';
+import { STORE_PRODUCT_MATCHES, isSupportedStoreHost } from '../src/store/stores';
+import { extractProduct, readProductPage } from '../src/store/extract';
+import { canRunOnSite } from '../src/store/custom-sites';
 
 export default defineContentScript({
   matches: STORE_PRODUCT_MATCHES,
@@ -15,6 +17,9 @@ export default defineContentScript({
       async start(scope) {
         // Product observers/UI are created only after the consent gate grants a scope.
         if (typeof document !== 'undefined') {
+          const builtIn = isSupportedStoreHost(location.hostname);
+          const enabled = builtIn || (await send({ type: 'IS_SITE_ENABLED' })).enabled;
+          if (!canRunOnSite(builtIn, enabled)) return;
           const client = createAnalysisClient();
           mountReflectionExperience({ scope, analyze: client.analyze, cancelAnalysis: client.cancel,
             saveProduct: (product, wait, devTestWait) => {
@@ -23,6 +28,7 @@ export default defineContentScript({
             },
             claimAutoOpen: async productId => (await send({ type: 'CLAIM_PANEL_OPEN', productId })).allowed,
             checkCooldown: product => send({ type: 'CHECK_COOLDOWN', product }),
+            readProduct: () => builtIn ? extractProduct(document) : readProductPage(document, document.location.href, true),
           });
         }
         try {

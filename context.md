@@ -47,6 +47,7 @@ By default, Unhaul never freezes checkout, blocks payment, calls preventDefault 
 | FR-16 | Cooling-off list: time left and Ready, correct after Chrome restart |
 | FR-17 | Skip and Purchased buttons (Purchased is user-reported) |
 | FR-18 | Optional cooling-off lock for matching saved products, off by default, with Unlock anyway |
+| FR-19 | Let users enable one additional HTTPS store origin at a time through Chrome optional host permissions |
 
 **Deferred, in this order:** notifications, pause-on-site and panel frequency settings, more stores, add Purchased items to My Items, optional budget and insights, save without timer, wider AI evaluation, smarter prompts and category-specific attributes.
 
@@ -54,8 +55,8 @@ By default, Unhaul never freezes checkout, blocks payment, calls preventDefault 
 
 ## 5. Stores
 
-- **Generic reader, no per-store code.** Runs only on five tested stores: Daraz, Nishat Linen, Stationers.pk, Izhar Shop, SOZ.
-- host_permissions and content script matches list only these five domains. **Never `<all_urls>`.**
+- **Generic reader, no per-store code.** Runs on the built-in store list plus user-added HTTPS sites granted one at a time through optional permissions.
+- Install-time host_permissions and content script matches list only built-in domains. Optional `https://*/*` access is requested per origin after a user click; **never `<all_urls>` at install.**
 - The consent screen names the five stores.
 - Daraz is the only non-Shopify store. If the reader can't get data from Daraz, drop Daraz and keep the other four.
 - Adding a store = add its domain, a fixture and a test. No new reader code.
@@ -156,6 +157,7 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 - All sample data and fixtures are made up or scrubbed. No real personal data.
 - Delete all data clears every `unhaul:` key and the classification cache.
 - The optional cooling-off lock is stored in existing settings; content scripts receive only a yes/no lock result for the current product, never the saved list.
+- User-added sites are derived from Chrome's granted origins; Unhaul reads only product pages on those origins and never stores the permission list.
 
 ## 11. Targets (NFRs)
 
@@ -213,6 +215,7 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Install via GitHub Release ZIP, not the Chrome Web Store | Store review can take days |
 | 2026-11-10 | AI key only in a Cloudflare Worker proxy | A key inside an extension can be read by anyone |
 | 2026-11-10 | Optional cooling-off lock, off by default, with Unlock anyway | Users asked for a firmer commitment device; opt-in keeps it voluntary |
+| 2026-11-10 | Users can add stores one at a time via optional host permissions | Generic reader works beyond the 21 stores; Chrome's prompt keeps it opt-in |
 | 2026-11-10 | Use `unhaul:items` and `unhaul:classification-cache`; initialize version-1 settings with consentGiven false only when absent | Explicit storage-initialization request; preserve existing consent and safely migrate legacy `items` without data loss |
 | 2026-11-10 | Background exclusively owns active extension storage; validated typed client messages and one operation queue; migration prefers namespaced IDs | Explicit storage-wrapper request; prevents lost read-modify-write updates and preserves existing user records |
 | 2026-11-10 | Install-only onboarding and options gating use persisted explicit consent; deletion returns to consent | User requested installation consent phase; product observation and content-script consent enforcement remain separate |

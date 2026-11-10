@@ -20,9 +20,9 @@ export function extractProduct(doc: Document, href = doc.location.href): Product
   return isSupportedStoreHost(new URL(href).hostname) ? readProductPage(doc, href) : null;
 }
 /** The same reader without the store allowlist. scripts/check-stores.mjs uses it to vet candidate stores. */
-export function readProductPage(doc: Document, href = doc.location.href): Product | null {
+export function readProductPage(doc: Document, href = doc.location.href, allowAnyPath = false): Product | null {
   const current = new URL(href);
-  if (!current.pathname.startsWith('/products/')) return null;
+  if (!allowAnyPath && !current.pathname.startsWith('/products/')) return null;
   const meta = (name: string) => doc.querySelector<HTMLMetaElement>(`meta[property="${name}"]`)?.content?.trim() || null;
   const canonical = meta('og:url');
   if (canonical) {

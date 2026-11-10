@@ -446,3 +446,10 @@ source drafts from the incoming branch contained unresolved merge markers and an
 alternate notification/budget UI; exact copies are preserved under
 `docs/merge-preservation/` for separate integration. They were not activated in this
 storage/save-flow task, and existing consent/storage contracts remain in use.
+## Custom store permissions
+
+The built-in store permissions remain install-time permissions. Settings can request
+one HTTPS origin at a time through Chrome's optional host-permission prompt. Granted
+origins are the source of truth; the background registers the existing content script
+dynamically for those origins and unregisters it when access is removed. Content receives
+only a site-enabled decision and uses the generic product reader on custom paths.

@@ -14,11 +14,19 @@
   <p id="consent-ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
   <p>Unhaul does not read payment details or block checkout.</p>
   <p>If you turn on the cooling-off lock, Unhaul holds Add to cart for products you saved until their wait ends; you can unlock any time.</p>
+  <p>You can also turn Unhaul on for other stores one at a time; Chrome will ask you each time.</p>
   <button id="agree">Agree and enable Unhaul</button>
   <button id="not-now">Not now</button>
 </section>
 <div id="app" hidden>
-  <div class="app-shell">
+  <section id="add-site-card" class="app-content" hidden aria-labelledby="add-site-title">
+    <h2 id="add-site-title" tabindex="-1">Use Unhaul on this site?</h2>
+    <p id="add-site-privacy">Unhaul will read product pages on this site to compare them with your items. Your data stays in this browser.</p>
+    <button id="allow-site">Allow on this site</button>
+    <button id="not-now-site">Not now</button>
+    <p id="add-site-status" role="status"></p>
+  </section>
+  <div id="app-shell" class="app-shell">
     <aside class="sidebar">
       <a class="wordmark" href="#home">Unhaul</a>
       <nav aria-label="Main navigation">
@@ -55,6 +63,9 @@
         <p id="ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
         <p>What leaves your browser: when AI classification is enabled, only the public product title, category text and image are sent through our classification service to an AI provider. Your owned items, visit history, and saved list are not included.</p>
         <h3>Supported stores</h3><p id="settings-stores"></p>
+        <h3>Your added sites</h3><ul id="custom-sites"></ul>
+        <label>Add a site <input id="custom-site-input" type="url" placeholder="https://example.com"></label>
+        <button id="add-custom-site">Add a site</button>
         <button id="turn-off">Turn off Unhaul</button>
         <div class="danger-zone"><h3>Danger zone</h3><p>Delete all local Unhaul data, including your items and saved list.</p><button id="delete-data">Delete all Unhaul data</button><div id="delete-confirm" hidden><p>Are you sure? This cannot be undone.</p><button id="delete-data-confirm">Delete all Unhaul data</button><button id="delete-cancel">Cancel</button></div></div>
         <p id="version"></p>

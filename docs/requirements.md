@@ -22,6 +22,7 @@ item type and optional purpose. Four-to-five-hour estimate assumes three teammat
 | FR-16 | Cooling-off list survives restart | Implemented; unit tested; native Chrome restart unverified until the demo run |
 | FR-17 | Skip and Purchased | Implemented |
 | FR-18 | Optional cooling-off lock with Unlock anyway | Implemented |
+| FR-19 | Enable one additional HTTPS store origin at a time through Chrome optional host permissions | Implemented |
 
 ## Non-functional targets (measured results only)
 

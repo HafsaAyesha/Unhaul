@@ -8,10 +8,28 @@ import { isSettings } from '../src/shared/storage-validation';
 import { dispatchStorage } from '../src/storage/dispatch';
 import { isStorageRequest, type StorageResponse } from '../src/shared/storage-messages';
 import { record } from '../src/shared/storage-validation';
+import { listCustomSites, normalizeOrigin, syncCustomContentScripts } from '../src/store/custom-sites';
+import { STORE_HOST_PERMISSIONS } from '../src/store/stores';
 
 export default defineBackground(() => {
   const analysis = createAnalysisService();
-  browser.action?.onClicked?.addListener(() => { void browser.runtime.openOptionsPage(); });
+  const syncSites = () => { void syncCustomContentScripts().catch(error => console.error('[Unhaul] Custom site sync failed', error)); };
+  browser.permissions?.onAdded?.addListener(syncSites);
+  browser.permissions?.onRemoved?.addListener(syncSites);
+  browser.action?.onClicked?.addListener(tab => {
+    const origin = tab.url ? normalizeOrigin(tab.url) : null;
+    if (origin && !STORE_HOST_PERMISSIONS.includes(`${origin}/*`)) {
+      void browser.permissions.contains({ origins: [`${origin}/*`] }).then(granted => {
+        if (granted) {
+          void browser.runtime.openOptionsPage();
+        } else {
+          void browser.tabs.create({ url: `${browser.runtime.getURL('/options.html')}#add-site=${encodeURIComponent(origin)}` });
+        }
+      }).catch(error => console.error('[Unhaul] Could not route toolbar action', error));
+      return;
+    }
+    void browser.runtime.openOptionsPage().catch(error => console.error('[Unhaul] Could not open Unhaul', error));
+  });
   browser.tabs.onRemoved.addListener(tabId => {
     void clearPanelSession(tabId).catch(() => console.error('[Unhaul] Panel session cleanup failed'));
   });
@@ -28,6 +46,7 @@ export default defineBackground(() => {
     }
   };
   browser.runtime.onInstalled.addListener(async details => {
+    syncSites();
     try {
       await initializeStorage();
     } catch (error) {
@@ -42,11 +61,7 @@ export default defineBackground(() => {
       }
     }
   });
-  browser.runtime.onStartup.addListener(initialize);
-  // Toolbar icon opens the full-page Unhaul home (options page) in its own tab. No permission needed.
-  browser.action?.onClicked.addListener(() => {
-    void browser.runtime.openOptionsPage().catch(error => console.error('[Unhaul] Could not open Unhaul', error));
-  });
+  browser.runtime.onStartup.addListener(() => { void initialize(); syncSites(); });
 
   browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
     if (sender.id !== browser.runtime.id) return;
@@ -63,6 +78,16 @@ export default defineBackground(() => {
         settings => sendResponse({ consentGiven: settings.consentGiven === true } satisfies ConsentResponse),
         () => sendResponse({ consentGiven: false } satisfies ConsentResponse),
       );
+      return true;
+    }
+    if (record(message) && message.type === 'IS_SITE_ENABLED') {
+      const origin = sender.url ? normalizeOrigin(sender.url) : null;
+      void (origin ? browser.permissions.contains({ origins: [`${origin}/*`] }) : Promise.resolve(false))
+        .then(enabled => sendResponse({ type: 'SITE_ENABLED', enabled }));
+      return true;
+    }
+    if (record(message) && message.type === 'LIST_CUSTOM_SITES') {
+      void listCustomSites().then(origins => sendResponse({ type: 'CUSTOM_SITES', origins }), () => sendResponse({ type: 'CUSTOM_SITES', origins: [] }));
       return true;
     }
     if (record(message) && message.type === 'CLAIM_PANEL_OPEN') {

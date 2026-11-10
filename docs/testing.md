@@ -26,6 +26,8 @@ From `proxy/`: `npm run typecheck`, `npm run build`.
 | Item type other, or weak evidence only | Unit tests (no match) |
 | Title containing HTML | Unit tests (rendered as text) |
 | Add to cart still works with the panel open | Manual (NFR-08) |
+| Custom HTTPS origin normalization rejects unsafe URLs and strips paths | Vitest (`custom-sites.test.ts`) |
+| Custom permission registration replaces dynamic scripts and removes them when empty | Vitest (`custom-sites.test.ts`) |
 
 ## Earlier task notes
 ## Scaffold validation — 10 November 2026

@@ -9,6 +9,8 @@ export type GetConsentMessage = { type: 'GET_CONSENT' };
 export type ConsentResponse = { consentGiven: boolean };
 export type CooldownRequest = { type: 'CHECK_COOLDOWN'; product: Product };
 export type CooldownResponse = { type: 'COOLDOWN_RESULT'; locked: boolean; reconsiderAt?: number; remainingLabel?: string };
+export type SiteEnabledResponse = { type: 'SITE_ENABLED'; enabled: boolean };
+export type CustomSitesResponse = { type: 'CUSTOM_SITES'; origins: string[] };
 export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED' | 'SAVE_FAILED'; message: string };
 export function isGetConsentMessage(value: unknown): value is GetConsentMessage {
   return record(value) && value.type === 'GET_CONSENT' && Object.keys(value).length === 1;
@@ -20,6 +22,8 @@ export function isConsentResponse(value: unknown): value is ConsentResponse {
 export type Request =
   | { type: 'PING' }
   | GetConsentMessage
+  | { type: 'IS_SITE_ENABLED' }
+  | { type: 'LIST_CUSTOM_SITES' }
   | CooldownRequest
   | { type: 'PRODUCT_SEEN'; product: Product }
   | { type: 'REFINE_PRODUCT'; analysisId: string }
@@ -31,6 +35,8 @@ export type Response =
   | { type: 'PONG' }
   | ConsentResponse
   | CooldownResponse
+  | SiteEnabledResponse
+  | CustomSitesResponse
   | ProductOperationError
   | AnalysisResult
   | { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean }
@@ -41,6 +47,8 @@ export type Response =
 export interface ReplyFor {
   PING: Extract<Response, { type: 'PONG' }>;
   GET_CONSENT: ConsentResponse;
+  IS_SITE_ENABLED: SiteEnabledResponse;
+  LIST_CUSTOM_SITES: CustomSitesResponse;
   CHECK_COOLDOWN: CooldownResponse;
   PRODUCT_SEEN: AnalysisResult;
   REFINE_PRODUCT: AnalysisResult;
@@ -55,6 +63,8 @@ export async function send<T extends Request['type']>(
 ): Promise<ReplyFor[T]> {
   const reply: unknown = await browser.runtime.sendMessage(req);
   if (req.type === 'GET_CONSENT' && !isConsentResponse(reply)) throw new Error('Invalid consent response.');
+  if (req.type === 'IS_SITE_ENABLED' && !isSiteEnabledResponse(reply)) throw new Error('Invalid site permission response.');
+  if (req.type === 'LIST_CUSTOM_SITES' && !isCustomSitesResponse(reply)) throw new Error('Invalid custom sites response.');
   if (req.type === 'CHECK_COOLDOWN' && (!record(reply) || reply.type !== 'COOLDOWN_RESULT' || typeof reply.locked !== 'boolean')) throw new Error('Invalid cooldown response.');
   if (record(reply) && reply.type === 'ERROR') throw new Error(typeof reply.message === 'string' ? reply.message : 'Product operation denied.');
   if ((req.type === 'PRODUCT_SEEN' || req.type === 'REFINE_PRODUCT') && !isAnalysisResult(reply)) throw new Error('Invalid analysis response.');
@@ -74,6 +84,13 @@ export function isPingMessage(value: unknown): value is Extract<Request, { type:
 }
 export function isPongMessage(value: unknown): value is Extract<Response, { type: 'PONG' }> {
   return hasType(value, 'PONG');
+}
+export function isSiteEnabledResponse(value: unknown): value is SiteEnabledResponse {
+  return record(value) && value.type === 'SITE_ENABLED' && typeof value.enabled === 'boolean';
+}
+export function isCustomSitesResponse(value: unknown): value is CustomSitesResponse {
+  return record(value) && value.type === 'CUSTOM_SITES' && Array.isArray(value.origins)
+    && value.origins.every(origin => typeof origin === 'string');
 }
 
 export type { StorageRequest, StorageResponse, StorageArguments, StorageResults } from './storage-messages';

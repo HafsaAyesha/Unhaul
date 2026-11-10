@@ -97,3 +97,4 @@ Copilot generated the read-only options dashboard and focused aggregation tests;
 Copilot was used to polish the reflection panel and badge styling; existing UI tests and extension checks were rerun.
 Copilot was used to build the tab-based options app shell, hash router, Home journey and Settings view; typecheck, tests and production manifest checks were run.
 Copilot implemented the opt-in cooling-off lock, background yes/no checks, locked panel flow and focused tests; typecheck, tests and build were run.
+Copilot added one-origin-at-a-time optional host permissions, dynamic custom-site content scripts, toolbar routing and settings controls; origin tests, typecheck and a production build were run.
