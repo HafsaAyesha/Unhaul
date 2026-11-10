@@ -10,7 +10,8 @@
     "typecheck": "wxt prepare && tsc --noEmit",
     "test": "vitest run",
     "postinstall": "wxt prepare",
-    "test:browser": "node scripts/smoke-extension.mjs"
+    "test:browser": "node scripts/smoke-extension.mjs",
+    "fixtures:auto": "node scripts/save-fixtures-auto.mjs"
   },
   "devDependencies": {
     "playwright": "^1.65.0",
