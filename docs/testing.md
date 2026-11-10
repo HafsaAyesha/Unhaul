@@ -93,3 +93,14 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
 - No product extraction, shopping UI/observer, visit pipeline or AI integration was
   added. Cleanup tests use registered test resources; real shopping components
   must use the documented scope cleanup/abort hooks when implemented.
+
+## Sample expansion / requested Phase 5 — 10 November 2026
+- Added one focused sample-data test; the existing journal match assertion now uses
+  sample-01. No loader, migration, consent or matching behavior was changed.
+- `npm test`: 7 files, 83 tests passed; zero failures/skips.
+- `npm run typecheck` and `npm run build`: passed.
+- Ten records, two per requested category; all IDs unique and deterministic;
+  every record passes the runtime OwnedItem/taxonomy checks and has fictional notes.
+- Fixtures directory contains only README.md, so real-product alignment is pending.
+- Old sample IDs may coexist with the new set in existing installs; documented in
+  README.md. No automatic migration or deletion was performed.

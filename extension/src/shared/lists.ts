@@ -30,7 +30,7 @@ export const ITEM_TYPES = {
   ],
   clothing_accessories: [
     'top', 'bottoms', 'dress_suit', 'outerwear',
-    'shoes', 'bag', 'jewellery', 'watch',
+    'shoes', 'bag', 'jewellery', 'watch', 'cap',
   ],
   other: ['other'],
 } as const satisfies Record<Category, readonly string[]>;
@@ -83,6 +83,7 @@ export const DEFAULT_PURPOSE: Record<ItemType, Purpose> = {
   outerwear: 'wearing',
   shoes: 'wearing',
   bag: 'carrying',
+  cap: 'wearing',
   jewellery: 'wearing',
   watch: 'wearing',
   other: 'other',
@@ -173,6 +174,7 @@ export const LABELS: Record<Category | ItemType | Purpose, string> = {
   outerwear: 'Outerwear',
   shoes: 'Shoes',
   bag: 'Bag',
+  cap: 'Cap',
   jewellery: 'Jewellery',
   watch: 'Watch',
   // purposes

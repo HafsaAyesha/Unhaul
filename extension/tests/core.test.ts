@@ -8,7 +8,7 @@ import { sampleItems } from '../src/storage/sample-items';
 
 describe('classification and matching contracts', () => {
   it('finds a journal while excluding other categories', () => {
-    expect(matchItems(classifyKeywords('A5 dotted journal'), sampleItems).map(item => item.id)).toEqual(['sample-journal']);
+    expect(matchItems(classifyKeywords('A5 dotted journal'), sampleItems).map(item => item.id)).toEqual(['sample-01']);
   });
   it('does not match unknown products', () => {
     const result = classifyKeywords('Mystery item');

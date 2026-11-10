@@ -37,3 +37,10 @@ responses, content lifecycle cleanup/timeout, and queued consent/generation guar
 Focused tests cover failure, revocation, late results, re-agreement and deletion.
 Existing browser smoke instructions were updated; native browser checks remain
 unrun under the managed extension blocklist. Results are in testing.md.
+
+## Sample data expansion — 2026-11-10
+AI assistance expanded fictional samples to ten stable IDs across five categories,
+added the missing cap taxonomy entry/default purpose/label, updated the existing
+journal-ID assertion, and added one focused data-validation test. No sample-loading
+or migration behavior changed. Real-fixture alignment remains pending because the
+fixtures directory contains only a README. Legacy-ID coexistence is documented.

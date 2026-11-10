@@ -63,3 +63,20 @@ All active extension storage access belongs to the background repository. UI/con
 uses `extension/src/storage/client.ts`; do not import repo.ts into an entrypoint
 other than background. See docs/design.md for validation, legacy migration,
 full-snapshot setter semantics and delete-all behavior.
+
+## Fictional sample items
+The demo includes ten records (`sample-01` through `sample-10`), two each for
+stationery, home décor, toys/games, electronics, and clothing/accessories. Existing
+taxonomy IDs use underscores. Pen sets use `pen`, decorative lights use `lamp`,
+backpacks use `bag`, and caps use the additive `cap` type.
+
+The journal/headphones samples support keyword/type matching demonstrations;
+unrepresented types such as mugs support no-match demonstrations. These are
+illustrative examples, not verified store fixtures: real-fixture alignment is pending.
+
+Older installs may still contain `sample-journal`, `sample-vase`,
+`sample-headphones` and `sample-puzzle`. Loading the new set preserves these and
+may leave 14 records, including semantically similar old/new samples. No automatic
+migration or deletion is performed in this sample-data task. The existing Delete
+all data action removes all Unhaul data if a fresh demo is wanted; it also removes
+consent and user-created records, so it is not a selective sample reset.
