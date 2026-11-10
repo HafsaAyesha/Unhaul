@@ -33,7 +33,7 @@ const typeSelect = element<HTMLSelectElement>('qa-type');
 const purposeSelect = element<HTMLSelectElement>('qa-purpose');
 async function syncCooldownLock(): Promise<void> {
   try {
-    cooldownLock.checked = (await storageClient.getSettings()).cooldownLock === true;
+    cooldownLock.checked = (await storageClient.getSettings()).cooldownLock !== false;
   } catch (failure) {
     error.hidden = false;
     error.textContent = failure instanceof Error ? failure.message : 'Could not load cooling-off lock setting.';

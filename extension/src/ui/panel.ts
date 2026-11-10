@@ -6,16 +6,16 @@ export interface PanelView {
   element: HTMLElement;
   closeButton: HTMLButtonElement;
   dispose(): void;
+  setNotice(text: string): void;
   update(product: Product, analysis: AnalysisResult | null, error: boolean, lock?: { locked: boolean; remainingLabel?: string }): void;
 }
 const DEV_TEST_OPTION = 'dev-1m';
-export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey, devTestWait?: boolean) => Promise<SaveResult>, onUnlock?: () => void): PanelView {
+export function createPanel(onClose: () => void, saveProduct?: (product: Product, wait: WaitKey, devTestWait?: boolean) => Promise<SaveResult>, openUnhaul?: () => void): PanelView {
   let currentProduct: Product | null = null;
   let productSignature = '';
   let revision = 0;
   let saving = false;
   let disposed = false;
-  let locked = false;
   const panel = document.createElement('section');
   panel.className = 'panel'; panel.hidden = true; panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'false'); panel.setAttribute('aria-labelledby', 'unhaul-heading');
@@ -75,23 +75,18 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   const continueButton = document.createElement('button'); continueButton.type = 'button'; continueButton.textContent = 'Continue shopping'; continueButton.addEventListener('click', onClose);
   const cartNote = document.createElement('p'); cartNote.className = 'muted'; cartNote.textContent = 'Unhaul does not change the store’s cart, reserve stock or lock prices.';
   const keepWaiting = document.createElement('button'); keepWaiting.type = 'button'; keepWaiting.textContent = 'Keep waiting'; keepWaiting.hidden = true; keepWaiting.addEventListener('click', onClose);
-  const unlock = document.createElement('button'); unlock.type = 'button'; unlock.textContent = 'Unlock anyway'; unlock.hidden = true;
-  const unlockConfirm = document.createElement('button'); unlockConfirm.type = 'button'; unlockConfirm.textContent = 'Unlock and continue'; unlockConfirm.hidden = true;
-  unlock.addEventListener('click', () => { unlock.hidden = true; unlockConfirm.hidden = false; });
-  unlockConfirm.addEventListener('click', () => {
-    locked = false; unlockConfirm.hidden = true; keepWaiting.hidden = true;
-    saveAction.hidden = false; continueButton.hidden = false;
-    if (onUnlock) onUnlock();
-    saveNote.textContent = 'Unlocked. Click Add to cart again.';
-  });
+  const earlyNote = document.createElement('p'); earlyNote.className = 'muted'; earlyNote.textContent = 'Changed your mind? End the wait early on the Unhaul page.'; earlyNote.hidden = true;
+  const openButton = document.createElement('button'); openButton.type = 'button'; openButton.textContent = 'Open Unhaul'; openButton.hidden = true;
+  openButton.addEventListener('click', () => openUnhaul?.());
   const saveAction = document.createElement('div'); saveAction.className = 'save-action'; saveAction.append(save, durationLabel);
-  const actions = document.createElement('div'); actions.className = 'actions'; actions.append(saveAction, continueButton, keepWaiting, unlock, unlockConfirm);
-  panel.append(header, product, state, question, matches, basic, actions, saveNote, cartNote);
+  const actions = document.createElement('div'); actions.className = 'actions'; actions.append(saveAction, continueButton, keepWaiting, openButton);
+  panel.append(header, product, state, question, matches, basic, actions, earlyNote, saveNote, cartNote);
   return {
     element: panel, closeButton: close,
+    setNotice(text) { saveNote.textContent = text; },
     dispose() { disposed = true; revision++; },
     update(product, analysis, error, lock) {
-      locked = lock?.locked === true;
+      const locked = lock?.locked === true;
       heading.textContent = locked ? 'Still cooling off' : 'A moment to reconsider';
       state.textContent = locked
         ? `You saved this for later. Ready in ${lock?.remainingLabel ?? 'a little while'}.`
@@ -100,8 +95,8 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
       saveAction.hidden = locked;
       continueButton.hidden = locked;
       keepWaiting.hidden = !locked;
-      unlock.hidden = !locked;
-      unlockConfirm.hidden = true;
+      earlyNote.hidden = !locked;
+      openButton.hidden = !locked;
       const signature = JSON.stringify(product);
       if (signature !== productSignature) {
         revision++; productSignature = signature; currentProduct = structuredClone(product); saving = false;

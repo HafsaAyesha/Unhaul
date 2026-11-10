@@ -11,4 +11,6 @@ it('accepts an optional boolean cooldownLock and rejects other values', () => {
 it('validates the settings mutation request shape', () => {
   expect(isStorageRequest({ type: 'STORAGE', operation: 'setCooldownLock', args: [true] })).toBe(true);
   expect(isStorageRequest({ type: 'STORAGE', operation: 'setCooldownLock', args: ['true'] })).toBe(false);
+  expect(isStorageRequest({ type: 'STORAGE', operation: 'endWaitEarly', args: ['saved-1'] })).toBe(true);
+  expect(isStorageRequest({ type: 'STORAGE', operation: 'endWaitEarly', args: [] })).toBe(false);
 });

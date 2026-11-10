@@ -51,10 +51,26 @@ describe('storage initialization', () => {
       expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.deadline - 1)).locked).toBe(false);
     });
 
+    it('treats a missing cooldownLock setting as on', async () => {
+      data[K.settings] = { ...DEFAULT_SETTINGS, consentGiven: true };
+      data[K.saved] = [EXAMPLE_SAVED];
+      const { getCooldownLock } = await import('../src/storage/repo');
+      expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.deadline - 1)).locked).toBe(true);
+    });
+
     it('does not lock skipped or purchased records', async () => {
       data[K.settings] = { ...DEFAULT_SETTINGS, consentGiven: true, cooldownLock: true };
       data[K.saved] = [{ ...EXAMPLE_SAVED, status: 'skipped' }, { ...EXAMPLE_SAVED, id: 'purchased', status: 'purchased' }];
       const { getCooldownLock } = await import('../src/storage/repo');
+      expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.savedAt + 1)).locked).toBe(false);
+    });
+
+    it('ends a waiting item early and lifts its lock', async () => {
+      data[K.settings] = { ...DEFAULT_SETTINGS, consentGiven: true };
+      data[K.saved] = [EXAMPLE_SAVED];
+      const { endWaitEarly, getCooldownLock } = await import('../src/storage/repo');
+      const ended = await endWaitEarly(EXAMPLE_SAVED.id);
+      expect(ended.endedEarlyAt).toEqual(expect.any(Number));
       expect((await getCooldownLock(EXAMPLE_PRODUCT, EXAMPLE_SAVED.savedAt + 1)).locked).toBe(false);
     });
   });

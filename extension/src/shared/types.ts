@@ -46,6 +46,7 @@ export interface SavedItem {
   reconsiderAt?: number;       // new records write this equal to deadline
   status: SavedStatus;
   decidedAt?: number;
+  endedEarlyAt?: number;
 }
 // "Ready" is never stored. It is waiting + Date.now() >= deadline.
 

@@ -96,10 +96,10 @@ export function getCooldownLock(product: Product, now = Date.now()): Promise<{ l
   return queued(async () => {
     if (!isProduct(product)) throw new Error('Invalid product.');
     const settings = await read(K.settings, { ...DEFAULT_SETTINGS }, isSettings, 'Unhaul settings');
-    if (settings.consentGiven !== true || settings.cooldownLock !== true) return { locked: false };
+    if (settings.consentGiven !== true || settings.cooldownLock === false) return { locked: false };
     const records = await read(K.saved, [], isSavedItems, 'saved items');
     const identity = savedProductIdentity(product);
-    const match = records.find(item => item.status === 'waiting' && savedProductIdentity(item.product) === identity);
+    const match = records.find(item => item.status === 'waiting' && item.endedEarlyAt === undefined && savedProductIdentity(item.product) === identity);
     if (!match) return { locked: false };
     try {
       const state = coolingState(match, now);
@@ -194,6 +194,24 @@ export function decideSavedItem(id: string, status: 'skipped' | 'purchased'): Pr
     return updated;
   });
 }
+export function endWaitEarly(id: string): Promise<SavedItem> {
+  const generation = currentConsentGeneration();
+  return queued(async () => {
+    if (!id || typeof id !== 'string') throw new Error('Invalid saved-item ID.');
+    await requireConsent(generation);
+    const records = await read(K.saved, [], isSavedItems, 'saved items');
+    const index = records.findIndex(item => item.id === id);
+    if (index < 0) throw new Error('Saved item no longer exists. Refresh the list.');
+    const existing = records[index];
+    if (existing.status !== 'waiting') throw new Error('Only waiting items can end early.');
+    if (existing.endedEarlyAt !== undefined) return existing;
+    const updated = { ...existing, endedEarlyAt: Date.now() };
+    requireValid([updated], isSavedItems, 'saved item');
+    await requireConsent(generation); assertCurrentWork(generation);
+    await write(K.saved, records.map((item, position) => position === index ? updated : item));
+    return updated;
+  });
+}
 /** Full-snapshot replacement, not an incremental merge. */
 export function setSavedItems(records: SavedItem[], work?: ConsentWork): Promise<void> {
   const generation = work?.generation ?? currentConsentGeneration();
@@ -274,7 +292,7 @@ export function deleteAllUnhaulData(): Promise<void> {
   }, false);
 }
 export const repo = {
-  initializeStorage, getSettings, setConsent, setCooldownLock, getCooldownLock, getItems, addItem, deleteItem, loadSampleItems,
+  initializeStorage, getSettings, setConsent, setCooldownLock, getCooldownLock, getItems, addItem, deleteItem, loadSampleItems, endWaitEarly,
   getSavedItems, saveProduct, decideSavedItem, setSavedItems, getVisits, setVisits, recordVisit,
   getClassificationCache, setClassificationCache, deleteAllUnhaulData,
 };

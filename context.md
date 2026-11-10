@@ -8,7 +8,7 @@ Event: AI-Powered SE-MAX, CUI Tech Fest FA'26. Submission: final commit hash thr
 
 A Chrome (Manifest V3) extension that gives shoppers a voluntary pause before an impulse buy, for any kind of product: stationery, decor, toys, electronics, clothing and more. On a supported store's product page it works out what the item is, checks whether the user already owns something that does the same job, and on Add to cart shows a small panel with similar owned items, one reflection question, and two buttons: **Save for later** and **Continue shopping**. Saved items go on a local cooling-off list with a countdown.
 
-By default, Unhaul never freezes checkout, blocks payment, calls preventDefault on the store's buttons, or removes items from the store's cart. An Add to cart click is not proof of purchase. If the user explicitly enables the optional cooling-off lock, a matching saved product's Add to cart/Add to bag/Buy now click is held until its wait ends, with an Unlock anyway path.
+By default, Unhaul never freezes checkout, blocks payment, or removes items from the store's cart. While a matching saved product is cooling off, Unhaul holds its Add to cart/Add to bag/Buy now action; the wait can end early only from the Unhaul page. An Add to cart click is not proof of purchase.
 
 ## 2. Users
 
@@ -46,7 +46,7 @@ By default, Unhaul never freezes checkout, blocks payment, calls preventDefault 
 | FR-15 | Save for later: 24 h, 3 d or 7 d; absolute deadline; product snapshot |
 | FR-16 | Cooling-off list: time left and Ready, correct after Chrome restart |
 | FR-17 | Skip and Purchased buttons (Purchased is user-reported) |
-| FR-18 | Optional cooling-off lock for matching saved products, off by default, with Unlock anyway |
+| FR-18 | Cooling-off lock for matching saved products, on by default, ending early only from the Unhaul page |
 | FR-19 | Let users enable one additional HTTPS store origin at a time through Chrome optional host permissions |
 
 **Deferred, in this order:** notifications, pause-on-site and panel frequency settings, more stores, add Purchased items to My Items, optional budget and insights, save without timer, wider AI evaluation, smarter prompts and category-specific attributes.
@@ -156,7 +156,8 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 - No keys, tokens or passwords in the repo or its history. `.env` is git-ignored; `.env.example` lists PROXY_URL and EXTENSION_TOKEN with no values. The API key exists only as a Cloudflare secret.
 - All sample data and fixtures are made up or scrubbed. No real personal data.
 - Delete all data clears every `unhaul:` key and the classification cache.
-- The optional cooling-off lock is stored in existing settings; content scripts receive only a yes/no lock result for the current product, never the saved list.
+- The cooling-off lock uses existing settings and defaults on when missing; content scripts receive only a yes/no lock result for the current product, never the saved list.
+- Ending a wait early records a timestamp on the saved item and makes it Ready to decide without deleting the saved record.
 - User-added sites are derived from Chrome's granted origins; Unhaul reads only product pages on those origins and never stores the permission list.
 
 ## 11. Targets (NFRs)
@@ -170,7 +171,7 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 | NFR-05 | 5 quick-adds in under 60 s |
 | NFR-06 | Judge finishes the demo in under 5 min on a fresh browser |
 | NFR-07 | 0 requests carrying owned items or history |
-| NFR-08 | Add to cart works 10/10 when the lock is off or the product isn't cooling off |
+| NFR-08 | Add to cart works 10/10 when no matching product is cooling off |
 
 Report measured results only. Mark each feature implemented, deferred or unverified.
 
@@ -214,7 +215,8 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Generic reader on 5 tested stores, no `<all_urls>` | Same reader works across Shopify stores; fixed list keeps permissions and consent narrow |
 | 2026-11-10 | Install via GitHub Release ZIP, not the Chrome Web Store | Store review can take days |
 | 2026-11-10 | AI key only in a Cloudflare Worker proxy | A key inside an extension can be read by anyone |
-| 2026-11-10 | Optional cooling-off lock, off by default, with Unlock anyway | Users asked for a firmer commitment device; opt-in keeps it voluntary |
+| 2026-11-10 | Cooling-off lock introduced as an opt-in feature | Users asked for a firmer commitment device while preserving voluntary control |
+| 2026-11-10 | Cooling-off lock on by default; ends early only from the Unhaul page | A strict pause protects the saved wait while preserving a deliberate settings/list escape |
 | 2026-11-10 | Users can add stores one at a time via optional host permissions | Generic reader works beyond the 21 stores; Chrome's prompt keeps it opt-in |
 | 2026-11-10 | Use `unhaul:items` and `unhaul:classification-cache`; initialize version-1 settings with consentGiven false only when absent | Explicit storage-initialization request; preserve existing consent and safely migrate legacy `items` without data loss |
 | 2026-11-10 | Background exclusively owns active extension storage; validated typed client messages and one operation queue; migration prefers namespaced IDs | Explicit storage-wrapper request; prevents lost read-modify-write updates and preserves existing user records |

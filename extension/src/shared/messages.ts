@@ -9,6 +9,7 @@ export type GetConsentMessage = { type: 'GET_CONSENT' };
 export type ConsentResponse = { consentGiven: boolean };
 export type CooldownRequest = { type: 'CHECK_COOLDOWN'; product: Product };
 export type CooldownResponse = { type: 'COOLDOWN_RESULT'; locked: boolean; reconsiderAt?: number; remainingLabel?: string };
+export type OpenUnhaulRequest = { type: 'OPEN_UNHAUL' };
 export type SiteEnabledResponse = { type: 'SITE_ENABLED'; enabled: boolean };
 export type CustomSitesResponse = { type: 'CUSTOM_SITES'; origins: string[] };
 export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED' | 'SAVE_FAILED'; message: string };

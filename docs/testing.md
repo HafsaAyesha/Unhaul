@@ -28,6 +28,8 @@ From `proxy/`: `npm run typecheck`, `npm run build`.
 | Add to cart still works with the panel open | Manual (NFR-08) |
 | Custom HTTPS origin normalization rejects unsafe URLs and strips paths | Vitest (`custom-sites.test.ts`) |
 | Custom permission registration replaces dynamic scripts and removes them when empty | Vitest (`custom-sites.test.ts`) |
+| Missing cooling-lock setting defaults on; explicit off, ready, skipped, purchased and ended-early items lift the lock | Vitest (`cooldown-lock.test.ts`, `storage.test.ts`) |
+| End-wait-early mutation is validated and denied to content senders | Vitest (`cooldown-lock.test.ts`, `storage-messaging.test.ts`) |
 
 ## Earlier task notes
 ## Scaffold validation — 10 November 2026

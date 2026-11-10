@@ -12,6 +12,7 @@ async function execute(request: StorageRequest): Promise<StorageResults[StorageO
     case 'loadSampleItems': return repo.loadSampleItems();
     case 'getSavedItems': return repo.getSavedItems();
     case 'decideSavedItem': return repo.decideSavedItem(request.args[0], request.args[1]);
+    case 'endWaitEarly': return repo.endWaitEarly(request.args[0]);
     case 'setSavedItems': await repo.setSavedItems(request.args[0]); return null;
     case 'getVisits': return repo.getVisits();
     case 'setVisits': await repo.setVisits(request.args[0]); return null;

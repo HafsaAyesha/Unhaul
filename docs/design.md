@@ -17,6 +17,14 @@ Never read payment/password fields. Keep owned items and visits local. Optional 
 sends public product information through a protected proxy; never embed provider keys.
 The configured proxy calls OpenAI; without configuration it fails closed. Consent UI is implemented; live AI is unverified.
 
+## Strict cooling-off lock
+
+The cooling-off lock defaults on when its optional setting is absent. A matching waiting
+saved product is held in the capture phase for click, submit and keyboard activation
+until the deadline; unknown or failed checks fail open. The only early exit is the
+options page, which records `endedEarlyAt` and presents the item as Ready to decide.
+Content receives only the current product's lock result, never saved records.
+
 ## Background-owned storage
 The active extension contracts remain in `extension/src/shared`; uploaded root-level
 contract drafts are preserved but are not imported by the WXT extension.

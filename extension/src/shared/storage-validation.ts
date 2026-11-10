@@ -44,7 +44,8 @@ export function isSavedItem(value: unknown): value is SavedItem {
     && value.deadline >= value.savedAt
     && (value.reconsiderAt === undefined || (time(value.reconsiderAt) && value.reconsiderAt === value.deadline))
     && inList(['waiting', 'skipped', 'purchased'], value.status)
-    && (value.decidedAt === undefined || time(value.decidedAt));
+    && (value.decidedAt === undefined || time(value.decidedAt))
+    && (value.endedEarlyAt === undefined || time(value.endedEarlyAt));
 }
 export function isVisit(value: unknown): value is VisitRecord {
   return record(value) && text(value.productId) && Array.isArray(value.times) && value.times.every(time);

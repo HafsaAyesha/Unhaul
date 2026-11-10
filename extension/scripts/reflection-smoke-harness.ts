@@ -50,6 +50,10 @@ export function start(enableSaving = false) {
           savedRecords = savedRecords.map(item => item.id === id ? { ...item, status, decidedAt: Date.now() } : item);
           return savedRecords.find(item => item.id === id)!;
         },
+        endWaitEarly: async id => {
+          savedRecords = savedRecords.map(item => item.id === id ? { ...item, endedEarlyAt: Date.now() } : item);
+          return savedRecords.find(item => item.id === id)!;
+        },
       });
       cleanup.push(() => { list?.dispose(); root.remove(); }); list.setEnabled(true);
     },

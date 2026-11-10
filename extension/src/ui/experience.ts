@@ -6,6 +6,7 @@ import { createBadge, updateBadge } from './badge';
 import { createPanel } from './panel';
 import { REFLECTION_STYLES } from './styles';
 import { savedProductIdentity } from '../shared/cooling';
+import { browser } from 'wxt/browser';
 interface Dependencies {
   scope: ConsentScope;
   analyze(product: Product, publish: (analysis: AnalysisResult) => void, signal: AbortSignal): Promise<void>;
@@ -36,7 +37,7 @@ export function mountReflectionExperience(deps: Dependencies) {
   let lastSource = '';
   let waitingForSource: string | undefined;
   const cooldown = new Map<string, { locked: boolean; reconsiderAt?: number; remainingLabel?: string }>();
-  const unlocked = new Set<string>();
+  const pendingCooldown = new Map<string, Promise<{ locked: boolean; reconsiderAt?: number; remainingLabel?: string }>>();
   const sourceSignature = () => JSON.stringify([
     ...[...doc.querySelectorAll('script[type="application/ld+json"]')].map(node => node.textContent),
     ...[...doc.querySelectorAll('meta[property^="og:"], meta[property^="product:"]')].map(node => node.getAttribute('content')),
@@ -71,22 +72,30 @@ export function mountReflectionExperience(deps: Dependencies) {
       const result = await deps.saveProduct!(item, wait, devTestWait);
       void refreshCooldown(item);
       return result;
-    }), () => {
-      if (product) unlocked.add(savedProductIdentity(product));
-    });
+    }), () => { void browser.runtime.sendMessage({ type: 'OPEN_UNHAUL' }); });
     shell.append(badge, panel.element); root.append(style, shell);
     doc.body?.append(host);
   }
-  async function refreshCooldown(item: Product): Promise<void> {
-    if (!deps.checkCooldown) return;
-    try {
-      const result = await deps.checkCooldown(item);
+  function refreshCooldown(item: Product): Promise<{ locked: boolean; reconsiderAt?: number; remainingLabel?: string }> {
+    if (!deps.checkCooldown) return Promise.resolve({ locked: false });
+    const identity = savedProductIdentity(item);
+    const request = deps.checkCooldown(item).then(result => {
       const identity = savedProductIdentity(item);
       cooldown.set(identity, result);
-      if (product && savedProductIdentity(product) === identity && panel && !unlocked.has(identity)) {
+      if (product && savedProductIdentity(product) === identity && panel) {
         panel.update(item, analysis, false, result);
       }
-    } catch { /* Fail open when the optional lock cannot be checked. */ }
+      return result;
+    }).catch(() => ({ locked: false }));
+    pendingCooldown.set(identity, request);
+    void request.finally(() => {
+      if (pendingCooldown.get(identity) === request) pendingCooldown.delete(identity);
+    });
+    return request;
+  }
+  function cooldownAnswer(item: Product): Promise<{ locked: boolean; reconsiderAt?: number; remainingLabel?: string }> | undefined {
+    const identity = savedProductIdentity(item);
+    return cooldown.has(identity) ? Promise.resolve(cooldown.get(identity)!) : pendingCooldown.get(identity);
   }
   function reset(): void {
     generation++; deps.cancelAnalysis(); analysis = null; fingerprint = ''; product = null; claiming = false; removeView();
@@ -109,7 +118,7 @@ export function mountReflectionExperience(deps: Dependencies) {
     };
     fingerprint = signature; product = next; analysis = null; lastSource = source;
     ensureView(); if (!badge || !panel) return;
-    cooldown.delete(savedProductIdentity(next)); unlocked.delete(savedProductIdentity(next));
+    cooldown.delete(savedProductIdentity(next));
     updateBadge(badge, { state: 'loading' }); panel.update(next, null, false);
     void refreshCooldown(next);
     void deps.analyze(next, result => {
@@ -137,17 +146,31 @@ export function mountReflectionExperience(deps: Dependencies) {
     const text = [element.getAttribute('aria-label'), element.getAttribute('name'), element.getAttribute('value'), element.textContent].filter(Boolean).join(' ');
     return /\b(?:add\s+to\s+(?:cart|bag)|buy\s+now)\b/i.test(text);
   }
-  function onShopping(event: Event): void {
+  async function onShopping(event: Event): Promise<void> {
     navigation();
     if (!active() || !product || !panel || claiming || event.composedPath().includes(host!)) return;
-    const target = event.type === 'submit' ? (event as SubmitEvent).submitter
+    const target = event.type === 'submit' ? ((event as SubmitEvent).submitter ?? event.target)
       : event.composedPath().find(node => node instanceof Element && node.matches('button, input[type="submit"], input[type="button"], [role="button"]'));
     if (!(target instanceof Element) || !cartLabel(target) || ('disabled' in target && target.disabled)) return;
     const current = generation;
     const id = product.productId;
     const identity = savedProductIdentity(product);
+    const answer = cooldownAnswer(product);
+    if (answer && !cooldown.has(identity)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const currentAnswer = await Promise.race([
+        answer,
+        new Promise<{ locked: boolean }>(resolve => setTimeout(() => resolve({ locked: false }), 1500)),
+      ]);
+      if (!active() || current !== generation) return;
+      panel.update(product, analysis, false, currentAnswer);
+      if (!currentAnswer.locked) panel.setNotice('Checked. Click Add to cart again.');
+      open();
+      return;
+    }
     const lock = cooldown.get(identity);
-    if (lock?.locked === true && !unlocked.has(identity)) {
+    if (lock?.locked === true) {
       event.preventDefault();
       event.stopImmediatePropagation();
       panel.update(product, analysis, false, lock);
@@ -156,29 +179,35 @@ export function mountReflectionExperience(deps: Dependencies) {
     }
     const location = doc.location.href;
     claiming = true;
-    // When the opt-in cooling-off lock is off, this remains intent-only and never cancels the merchant event.
+    // Unlocked products remain intent-only and never cancel the merchant event.
     void deps.claimAutoOpen(id).then(allowed => {
       if (allowed && active() && current === generation && product?.productId === id && doc.location.href === location) open();
     }).catch(() => { /* Manual opening stays available when session persistence fails. */ })
       .finally(() => { if (current === generation) claiming = false; });
   }
   const onEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close(); };
+  const onFocus = () => { if (product) void refreshCooldown(product); };
+  const onVisibility = () => { if (doc.visibilityState === 'visible' && product) void refreshCooldown(product); };
+  const onKeydown = (event: KeyboardEvent) => {
+    onEscape(event);
+    if ((event.key === 'Enter' || event.key === ' ') && event.target instanceof Element && cartLabel(event.target)) void onShopping(event);
+  };
   const observer = new MutationObserver(mutations => {
     if (mutations.some(mutation => mutation.target !== host)) { navigation(); schedule(); }
   });
   observer.observe(doc.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['content', 'value'] });
-  doc.addEventListener('keydown', onEscape, true);
+  doc.addEventListener('keydown', onKeydown, true);
   doc.addEventListener('click', onShopping, true); doc.addEventListener('submit', onShopping, true);
   doc.addEventListener('change', schedule, true); doc.addEventListener('input', schedule, true);
-  win.addEventListener('popstate', navigation); win.addEventListener('hashchange', navigation);
+  win.addEventListener('popstate', navigation); win.addEventListener('hashchange', navigation); win.addEventListener('focus', onFocus); doc.addEventListener('visibilitychange', onVisibility);
   // Works across isolated/main-world history calls without monkeypatching merchant history.
   const poll = setInterval(navigation, 400);
   function dispose(): void {
     if (stopped) return;
     stopped = true; generation++; clearTimeout(debounce); clearInterval(poll); observer.disconnect();
-    deps.cancelAnalysis(); doc.removeEventListener('keydown', onEscape, true); doc.removeEventListener('click', onShopping, true); doc.removeEventListener('submit', onShopping, true);
+    deps.cancelAnalysis(); doc.removeEventListener('keydown', onKeydown, true); doc.removeEventListener('click', onShopping, true); doc.removeEventListener('submit', onShopping, true);
     doc.removeEventListener('change', schedule, true); doc.removeEventListener('input', schedule, true);
-    win.removeEventListener('popstate', navigation); win.removeEventListener('hashchange', navigation); removeView();
+    win.removeEventListener('popstate', navigation); win.removeEventListener('hashchange', navigation); win.removeEventListener('focus', onFocus); doc.removeEventListener('visibilitychange', onVisibility); removeView();
   }
   deps.scope.onCleanup(dispose);
   if (active()) update(); else dispose();

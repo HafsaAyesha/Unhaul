@@ -23,7 +23,8 @@ body > main > h1, body > main > p { display: none; }
 #error { margin-bottom: 12px; color: var(--danger); }
 .app-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100vh - 48px); gap: 24px; }
 .sidebar { padding: 20px 12px; }
-.wordmark { display: block; margin: 0 12px 24px; color: var(--brand); font-size: 1.5rem; font-weight: 800; text-decoration: none; }
+.wordmark { display: flex; align-items: center; gap: 8px; margin: 0 12px 24px; color: var(--brand); font-size: 1.5rem; font-weight: 800; text-decoration: none; }
+.wordmark img { display: block; width: 32px; height: 32px; border-radius: 8px; }
 nav { display: grid; gap: 6px; }
 nav button { width: 100%; border-color: transparent; text-align: left; }
 nav button[aria-current="page"] { background: var(--brand); color: #fff; }

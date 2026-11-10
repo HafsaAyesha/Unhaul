@@ -69,6 +69,10 @@ export default defineBackground(() => {
       sendResponse({ type: 'PONG' });
       return;
     }
+    if (record(message) && message.type === 'OPEN_UNHAUL') {
+      void browser.tabs.create({ url: `${browser.runtime.getURL('/options.html')}#saved` });
+      return;
+    }
     if (record(message) && message.type === 'GET_CONSENT') {
       if (!isGetConsentMessage(message)) {
         sendResponse({ consentGiven: false } satisfies ConsentResponse);

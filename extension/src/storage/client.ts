@@ -19,6 +19,7 @@ export const storageClient = {
   loadSampleItems: () => call('loadSampleItems', []),
   getSavedItems: () => call('getSavedItems', []),
   decideSavedItem: (id: string, status: 'skipped' | 'purchased') => call('decideSavedItem', [id, status]),
+  endWaitEarly: (id: string) => call('endWaitEarly', [id]),
   setSavedItems: async (records: SavedItem[]): Promise<void> => { await call('setSavedItems', [records]); },
   getVisits: () => call('getVisits', []),
   setVisits: async (records: VisitRecord[]): Promise<void> => { await call('setVisits', [records]); },

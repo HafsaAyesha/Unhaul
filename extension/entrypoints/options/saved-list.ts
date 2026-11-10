@@ -4,6 +4,7 @@ import { formatPrice } from '../../src/ui/price';
 interface SavedClient {
   getSavedItems(): Promise<SavedItem[]>;
   decideSavedItem(id: string, status: 'skipped' | 'purchased'): Promise<SavedItem>;
+  endWaitEarly(id: string): Promise<SavedItem>;
 }
 function safeURL(value: string | null): string | null {
   if (!value) return null;
@@ -23,7 +24,7 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
   history.hidden = true;
   function tick(): void {
     if (!enabled || disposed || doc.visibilityState === 'hidden') return;
-    for (const { node, item } of labels) node.textContent = remainingLabel(item);
+    for (const { node, item } of labels) node.textContent = item.endedEarlyAt === undefined ? remainingLabel(item) : 'Ready to decide';
   }
   function syncTimer(): void {
     clearInterval(timer); timer = undefined;
@@ -48,9 +49,24 @@ export function createSavedList(root: HTMLElement, client: SavedClient) {
     price.hidden = !price.textContent;
     const saved = doc.createElement('p'); saved.textContent = `Saved ${new Date(item.savedAt).toLocaleString()}`;
     const clock = doc.createElement('p'); clock.className = 'saved-time'; labels.push({ node: clock, item });
+    if (item.endedEarlyAt !== undefined) clock.textContent = 'Ready to decide';
     const deadline = doc.createElement('p'); deadline.textContent = `Reconsider ${new Date(item.reconsiderAt ?? item.deadline).toLocaleString()}`;
     card.append(price, saved, clock, deadline);
     if (item.status === 'waiting') {
+      if (item.endedEarlyAt === undefined) {
+        const end = doc.createElement('button'); end.type = 'button'; end.textContent = 'End wait early';
+        end.addEventListener('click', async () => {
+          if (!enabled || disposed) return;
+          if (end.textContent === 'End wait early') {
+            end.textContent = 'End the wait for this item? Add to cart will work again.';
+            return;
+          }
+          end.disabled = true; notice.textContent = 'Ending the wait…';
+          try { await client.endWaitEarly(item.id); await refresh(); }
+          catch (failure) { error.textContent = failure instanceof Error ? failure.message : 'Could not end the wait.'; end.disabled = false; }
+        });
+        card.append(end);
+      }
       for (const [label, decision] of [['Skip', 'skipped'], ['Purchased', 'purchased']] as const) {
         const button = doc.createElement('button'); button.type = 'button'; button.textContent = label;
         button.addEventListener('click', async () => {
