@@ -43,6 +43,10 @@ export default defineBackground(() => {
     }
   });
   browser.runtime.onStartup.addListener(initialize);
+  // Toolbar icon opens the full-page Unhaul home (options page) in its own tab. No permission needed.
+  browser.action?.onClicked.addListener(() => {
+    void browser.runtime.openOptionsPage().catch(error => console.error('[Unhaul] Could not open Unhaul', error));
+  });
 
   browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
     if (sender.id !== browser.runtime.id) return;
