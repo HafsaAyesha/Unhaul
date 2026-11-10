@@ -20,3 +20,6 @@ button:disabled { cursor: wait; opacity: .65; }
 #quick-add button { justify-self: start; }
 .item-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ccd6d0; overflow-wrap: anywhere; }
 #turn-off { margin-right: 8px; }
+
+.saved-image-placeholder { width: 64px; height: 64px; background: #d9dedb; border-radius: 6px; }
+.saved-intro { font-weight: 600; }

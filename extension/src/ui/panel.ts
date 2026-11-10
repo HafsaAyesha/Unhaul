@@ -1,6 +1,7 @@
 import type { AnalysisResult, Product, SaveResult } from '../shared/types';
 import { WAITS, WAIT_LABELS, type WaitKey } from '../shared/lists';
 import { choosePrompt } from '../match/prompts';
+import { formatPrice } from './price';
 export interface PanelView {
   element: HTMLElement;
   closeButton: HTMLButtonElement;
@@ -26,6 +27,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   image.addEventListener('error', () => { image.hidden = true; });
   const state = document.createElement('p'); state.setAttribute('role', 'status');
   const matches = document.createElement('ul');
+  const basic = document.createElement('p'); basic.className = 'muted'; basic.textContent = 'Basic matching'; basic.hidden = true;
   const question = document.createElement('p'); question.className = 'question';
   const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save for later'; save.disabled = !saveProduct; save.setAttribute('aria-describedby', 'unhaul-save-note');
   const durationLabel = document.createElement('label'); durationLabel.textContent = 'Reconsider after '; durationLabel.htmlFor = 'unhaul-duration';
@@ -59,7 +61,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   });
   const continueButton = document.createElement('button'); continueButton.type = 'button'; continueButton.textContent = 'Continue shopping'; continueButton.addEventListener('click', onClose);
   const cartNote = document.createElement('p'); cartNote.className = 'muted'; cartNote.textContent = 'Unhaul does not change the store’s cart, reserve stock or lock prices.';
-  panel.append(header, title, price, image, state, matches, question, durationLabel, save, continueButton, saveNote, cartNote);
+  panel.append(header, title, price, image, state, matches, basic, question, durationLabel, save, continueButton, saveNote, cartNote);
   return {
     element: panel, closeButton: close,
     dispose() { disposed = true; revision++; },
@@ -71,10 +73,8 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
         if (saveProduct) saveNote.textContent = '';
       }
       title.textContent = product.title;
-      if (product.price !== null && product.currency) {
-        try { price.textContent = new Intl.NumberFormat('en-PK', { style: 'currency', currency: product.currency }).format(product.price); }
-        catch { price.textContent = `${product.currency} ${product.price}`; }
-      } else price.textContent = 'Price unavailable';
+      price.textContent = formatPrice(product.price, product.currency);
+      price.hidden = !price.textContent;
       if (product.imageUrl) {
         // Reader validates URLs; still check before assigning a resource attribute.
         try {
@@ -90,6 +90,8 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
         const row = document.createElement('li'); row.textContent = `${match.item.name} — ${match.reason}`; return row;
       });
       matches.replaceChildren(...rows);
+      // Keyword results (no AI yet, or AI unavailable) are labelled so the user knows they are basic.
+      basic.hidden = !analysis || (analysis.phase !== 'basic' && analysis.phase !== 'fallback') || analysis.classification.source !== 'keywords';
       question.textContent = choosePrompt(analysis?.totalMatches ?? 0, product, analysis?.repeatVisit === true);
     },
   };

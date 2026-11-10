@@ -12,8 +12,13 @@ export function coolingState(item: SavedItem, now = Date.now()): { remainingMs: 
 export function remainingLabel(item: SavedItem, now = Date.now()): string {
   if (item.status !== 'waiting') return item.status === 'skipped' ? 'Skipped' : 'Purchased (self-reported)';
   const state = coolingState(item, now);
-  if (state.ready) return 'Ready';
-  const minutes = Math.ceil(state.remainingMs / 60_000);
-  const days = Math.floor(minutes / 1440); const hours = Math.floor(minutes % 1440 / 60);
-  return `${days ? `${days}d ` : ''}${hours ? `${hours}h ` : ''}${minutes % 60 || (!days && !hours) ? `${minutes % 60}m ` : ''}remaining`.trim();
+  if (state.ready) return 'Ready to decide';
+  if (state.remainingMs < 60_000) return 'less than a minute';
+  const minutes = Math.floor(state.remainingMs / 60_000);
+  const days = Math.floor(minutes / 1440); const hours = Math.floor(minutes % 1440 / 60); const mins = minutes % 60;
+  const unit = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  // At most two units: '2 days 4 hours', '3 hours 10 minutes', '25 minutes'.
+  if (days) return hours ? `${unit(days, 'day')} ${unit(hours, 'hour')}` : unit(days, 'day');
+  if (hours) return mins ? `${unit(hours, 'hour')} ${unit(mins, 'minute')}` : unit(hours, 'hour');
+  return unit(mins, 'minute');
 }
