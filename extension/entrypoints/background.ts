@@ -11,6 +11,7 @@ import { record } from '../src/shared/storage-validation';
 
 export default defineBackground(() => {
   const analysis = createAnalysisService();
+  browser.action?.onClicked?.addListener(() => { void browser.runtime.openOptionsPage(); });
   browser.tabs.onRemoved.addListener(tabId => {
     void clearPanelSession(tabId).catch(() => console.error('[Unhaul] Panel session cleanup failed'));
   });

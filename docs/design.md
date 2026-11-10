@@ -1,6 +1,6 @@
 # Design
 Content script → background messages → classifier/matcher/storage → page UI.
-Options page manages consent, My Items and saved items. The service worker must not
+Options app manages consent, Home, My Items, Saved, Dashboard and Settings. The service worker must not
 rely on in-memory state or long-running timers. Persist absolute deadlines.
 
 Shared interfaces live in `extension/src/shared`. One adapter per verified store.
@@ -57,14 +57,26 @@ Delete-all removes every `unhaul:` key, including future cache keys, and legacy
 `items`, while preserving unrelated storage. It works even with malformed data.
 Later reads do not recreate settings. Explicit initialization or later user writes
 can create data again. Existing options controls disable while pending and show
-errors; no new consent, saved-list or other screen is implemented by this task.
+errors; existing consent, saved-list and controller actions remain the source of truth
+for their corresponding app views.
 
 ## Installation consent and options gating
 On first installation the background awaits storage initialization, then opens the
 options page. Updates initialize safely without opening onboarding. Browser startup
 still initializes storage. Initialization/opening failures are logged separately.
 
-Options starts with My Items and other application controls hidden in the HTML,
+### Options app
+The options page is a full-page app opened in its own tab from the extension action.
+Hash routes (`#home`, `#items`, `#saved`, `#dashboard`, `#settings`) show one view at
+a time, with the navigation state and view heading updated accessibly. Home computes
+journey progress and summary tiles from settings, owned items and saved records; Ready
+is derived from each absolute deadline and is never persisted. Saved and Dashboard
+continue to use their existing read-only client-backed renderers. Settings reuses the
+existing consent and deletion controller actions, with a confirmation step for deletion.
+The sidebar becomes a horizontal navigation bar on narrow screens. No new permissions,
+storage keys, settings fields or network behavior are introduced.
+
+Options starts with Home and other application controls hidden in the HTML,
 shows loading while reading settings through the typed client, and reveals My Items
 only after true consent and a successful item read. Missing consent resolves to
 false without a write. Failed reads show a Retry action. Agreement awaits the
