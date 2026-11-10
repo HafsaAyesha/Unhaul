@@ -1,0 +1,4 @@
+body { font: 16px/1.6 system-ui, sans-serif; background: #f5f4f0; color: #203c35; margin: 0; }
+main { max-width: 760px; margin: 48px auto; padding: 24px; }
+section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+button { padding: 10px 16px; cursor: pointer; }

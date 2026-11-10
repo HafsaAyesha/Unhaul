@@ -1,0 +1,4 @@
+name = "unhaul-ai-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+# Configure provider/model, rate limits and permitted extension origins before deployment.
