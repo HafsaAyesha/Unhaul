@@ -28,14 +28,16 @@
   </section>
   <div id="app-shell" class="app-shell">
     <aside class="sidebar">
-      <a class="wordmark" href="#home"><img src="/icon/128.png" alt="" width="32" height="32"> <span>Unhaul</span></a>
+      <a class="wordmark" href="#home"><span class="brand-mark" data-icon="leaf"></span><span>Unhaul</span></a>
+      <p class="wordmark-tagline">Shop with intention</p>
       <nav aria-label="Main navigation">
-        <button type="button" data-nav="home">Home</button>
-        <button type="button" data-nav="items">My Items</button>
-        <button type="button" data-nav="saved">Saved for later</button>
-        <button type="button" data-nav="dashboard">Dashboard</button>
-        <button type="button" data-nav="settings">Settings</button>
+        <button type="button" data-nav="home"><span data-icon="home"></span><span>Home</span></button>
+        <button type="button" data-nav="items"><span data-icon="box"></span><span>My Items</span></button>
+        <button type="button" data-nav="saved"><span data-icon="clock"></span><span>Saved for later</span></button>
+        <button type="button" data-nav="dashboard"><span data-icon="chart"></span><span>Dashboard</span></button>
+        <button type="button" data-nav="settings"><span data-icon="gear"></span><span>Settings</span></button>
       </nav>
+      <p class="privacy-chip"><span data-icon="lock"></span><span>Your data stays in this browser</span></p>
     </aside>
     <div class="app-content">
       <section data-view="home" aria-labelledby="home-title"><h2 id="home-title" tabindex="-1">Welcome to Unhaul</h2><div id="home-content"></div></section>

@@ -10,6 +10,28 @@ import { CATEGORIES, ITEM_TYPES, PURPOSES, type Category, type ItemType, type Pu
 import './style.css';
 import { proxyConfig } from '../../src/classify/config';
 import { isCustomSitesResponse } from '../../src/shared/messages';
+function addShellIcons(): void {
+  const paths: Record<string, string> = {
+    home: 'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5M9 21v-6h6v6',
+    box: 'm4 7 8-4 8 4v10l-8 4-8-4V7Zm0 0 8 4 8-4M12 11v10',
+    clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2',
+    chart: 'M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-6',
+    gear: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0-8Zm0-5v2m0 14v2m9-9h-2M5 12H3m15.36-6.36-1.42 1.42M7.06 16.94l-1.42 1.42m12.72 0-1.42-1.42M7.06 7.06 5.64 5.64',
+    leaf: 'M20 4C11 4 5 8 5 14c0 3 2 5 5 5 6 0 10-6 10-15ZM4 21c3-4 6-7 11-9',
+    lock: 'M6 10h12v10H6zM8 10V7a4 4 0 0 1 8 0v3',
+  };
+  for (const host of document.querySelectorAll<HTMLElement>('[data-icon]')) {
+    const name = host.dataset.icon;
+    const pathData = name ? paths[name] : undefined;
+    if (!pathData) continue;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', pathData); path.setAttribute('fill', 'none'); path.setAttribute('stroke', 'currentColor'); path.setAttribute('stroke-width', '1.8'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path); host.replaceChildren(svg);
+  }
+}
+addShellIcons();
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const consent = element<HTMLElement>('consent');
 const app = element<HTMLElement>('app');
