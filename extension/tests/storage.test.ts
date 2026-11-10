@@ -247,3 +247,51 @@ it('claims automatic panel opening once per product/tab and clears markers on de
   expect(await claimPanelOpen(1, 'p1')).toBe(true);
   await repo.deleteAllUnhaulData(); expect(sessionData).toEqual({});
 });
+
+it('saves exact durations, reloads persisted deadlines, and derives Ready at the boundary', async () => {
+  const { WAITS } = await import('../src/shared/lists');
+  const { coolingState } = await import('../src/shared/cooling');
+  const { repo, saveProduct } = await import('../src/storage/repo');
+  await repo.setConsent(true);
+  for (const wait of ['24h', '3d', '7d'] as const) {
+    const result = await saveProduct({ ...EXAMPLE_SAVED.product, variantId: wait, price: null, imageUrl: null }, wait);
+    expect(result.record.reconsiderAt).toBe(result.record.savedAt + WAITS[wait]);
+    expect(coolingState(result.record, result.deadline - 1)).toEqual({ remainingMs: 1, ready: false });
+    expect(coolingState(result.record, result.deadline)).toEqual({ remainingMs: 0, ready: true });
+    expect(coolingState(result.record, result.deadline + 1).ready).toBe(true);
+  }
+  const before = await repo.getSavedItems();
+  vi.resetModules();
+  expect(await (await import('../src/storage/repo')).getSavedItems()).toEqual(before);
+  expect(before.every(item => item.product.price === null && item.product.imageUrl === null)).toBe(true);
+});
+it('serializes variant-aware duplicate saves and preserves immutable decisions on resave', async () => {
+  const { repo, saveProduct, decideSavedItem } = await import('../src/storage/repo');
+  await repo.setConsent(true);
+  const product = EXAMPLE_SAVED.product;
+  const [first, duplicate] = await Promise.all([
+    saveProduct(product, '24h'), saveProduct({ ...product, title: 'Changed title' }, '7d'),
+    saveProduct({ ...product, variantId: 'other' }, '3d'),
+    saveProduct({ ...product, productId: 'different-product' }, '3d'),
+  ]);
+  expect(duplicate.result).toBe('already_saved'); expect(duplicate.record).toEqual(first.record);
+  expect(await repo.getSavedItems()).toHaveLength(3);
+  const decided = await decideSavedItem(first.record.id, 'purchased');
+  expect(decided.status).toBe('purchased'); expect(decided.decidedAt).toEqual(expect.any(Number));
+  await expect(decideSavedItem(first.record.id, 'skipped')).rejects.toThrow('already recorded');
+  const again = await saveProduct(product, '3d');
+  expect(again.result).toBe('saved'); expect(again.record.id).not.toBe(first.record.id);
+  expect((await repo.getSavedItems()).find(item => item.id === first.record.id)).toEqual(decided);
+});
+it('recognizes legacy active records and rejects saves/decisions after revocation or deletion', async () => {
+  const { repo, saveProduct, decideSavedItem } = await import('../src/storage/repo');
+  await expect(saveProduct(EXAMPLE_SAVED.product, '3d')).rejects.toThrow('Consent');
+  await repo.setConsent(true); data[K.saved] = [EXAMPLE_SAVED];
+  expect((await saveProduct(EXAMPLE_SAVED.product, '7d')).record).toEqual(EXAMPLE_SAVED);
+  const pending = saveProduct({ ...EXAMPLE_SAVED.product, variantId: 'pending' }, '3d');
+  const deletion = repo.deleteAllUnhaulData();
+  await expect(pending).rejects.toThrow('Consent'); await deletion;
+  expect(data).toEqual({});
+  await expect(decideSavedItem(EXAMPLE_SAVED.id, 'skipped')).rejects.toThrow('Consent');
+  expect(data).toEqual({});
+});

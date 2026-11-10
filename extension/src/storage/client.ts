@@ -17,6 +17,7 @@ export const storageClient = {
   deleteItem: async (id: string): Promise<void> => { await call('deleteItem', [id]); },
   loadSampleItems: () => call('loadSampleItems', []),
   getSavedItems: () => call('getSavedItems', []),
+  decideSavedItem: (id: string, status: 'skipped' | 'purchased') => call('decideSavedItem', [id, status]),
   setSavedItems: async (records: SavedItem[]): Promise<void> => { await call('setSavedItems', [records]); },
   getVisits: () => call('getVisits', []),
   setVisits: async (records: VisitRecord[]): Promise<void> => { await call('setVisits', [records]); },

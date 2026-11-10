@@ -56,3 +56,11 @@ full real-store variant behavior. Synthetic Chromium tests are not live-site evi
 Deferred dependency: Save for later remains disabled with an explanation; Phase 8
 cooling-off persistence/UI is not implemented. AI remains unverified/unconfigured
 as described in Phase 6. No new stores or checkout interception were added.
+
+## Phase 8 status (supersedes the Phase 7 save limitation)
+Implemented: duration selector and acknowledged saving, persisted product snapshots,
+variant-aware active deduplication, absolute reconsiderAt/deadline, Ready/countdowns,
+consent-hidden saved list with refresh/error/empty states, immutable Skip/Purchased
+history, resave preservation, and delete-all compatibility. No alarms/notifications.
+Unverified: native Chrome restart acceptance and live Daraz behavior. Repository
+reload/persistence and synthetic UI checks are evidence only for those test targets.

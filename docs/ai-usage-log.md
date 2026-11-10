@@ -60,3 +60,10 @@ Added two focused cases plus a synthetic Chromium UI harness; no new dependencie
 The previous uncommitted Phase 6 work is included for the user-authorized main push.
 Saving is explicitly unavailable, and live merchant/native extension/AI behavior is
 not claimed. Verification details are in testing.md.
+
+## Phase 8 — 2026-11-10
+AI assistance implemented atomic save/decision APIs, typed transport, compatible
+absolute deadlines, panel duration/error/acknowledgement UI, and the options list.
+Added three compact storage cases and extended the existing synthetic UI harness.
+Checks and the native browser restriction are recorded in testing.md. No provider
+call, order, deployment or new dependency was introduced. User authorized the main push.

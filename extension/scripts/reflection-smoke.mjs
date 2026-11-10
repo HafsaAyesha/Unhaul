@@ -67,5 +67,33 @@ try {
   await page.waitForTimeout(200);
   assert.equal(await page.locator('[data-unhaul-root]').count(), 0);
   assert.equal(await page.evaluate(() => window.h.claims), claims);
+  await page.evaluate(() => { window.h = UnhaulHarness.start(true); window.h.root.querySelector('.badge').click(); });
+  await page.evaluate(() => {
+    window.h.root.querySelector('select').value = '3d';
+    [...window.h.root.querySelectorAll('button')].find(button => button.textContent === 'Save for later').click();
+  });
+  assert.equal(await page.evaluate(() => window.h.root.querySelector('select').disabled), true);
+  assert.doesNotMatch(await page.evaluate(() => window.h.root.querySelector('#unhaul-save-note').textContent), /Saved in Unhaul/);
+  await page.evaluate(() => window.h.completeSave(true));
+  await page.waitForFunction(() => window.h.root.querySelector('#unhaul-save-note').textContent.includes('failure'));
+  assert.equal(await page.evaluate(() => window.h.root.querySelector('select').value), '3d');
+  await page.evaluate(() => [...window.h.root.querySelectorAll('button')].find(button => button.textContent === 'Save for later').click());
+  await page.evaluate(() => window.h.completeSave());
+  await page.waitForFunction(() => window.h.root.querySelector('#unhaul-save-note').textContent === 'Saved in Unhaul. This does not change the store’s cart.');
+  // Production list lives in a separate options page; close the floating panel in this shared test document.
+  await page.evaluate(() => { [...window.h.root.querySelectorAll('button')].find(button => button.textContent === 'Continue shopping').click(); window.h.mountList(); });
+  await page.locator('#synthetic-saved-list .saved-card').waitFor();
+  assert.match(await page.locator('#synthetic-saved-list').textContent(), /Price unavailable/);
+  assert.equal(await page.locator('#synthetic-saved-list img').count(), 0);
+  assert.equal(await page.locator('#synthetic-saved-list a').getAttribute('rel'), 'noopener noreferrer');
+  await page.evaluate(() => window.h.expire());
+  assert.equal(await page.locator('#synthetic-saved-list .saved-time').textContent(), 'Ready');
+  await page.getByRole('button', { name: 'Skip', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#synthetic-saved-list .saved-time').textContent === 'Skipped');
+  await page.evaluate(() => window.h.clearSaved());
+  await page.waitForFunction(() => document.querySelector('#synthetic-saved-list').textContent.includes('No saved items yet'));
+  await page.evaluate(() => window.h.revoke());
+  assert.equal(await page.locator('#synthetic-saved-list').count(), 0);
+  console.log('PASS: synthetic save UI — pending/error/retry, duration retained, acknowledged success, list, missing fields, Ready, decision history and clearing.');
   console.log('PASS: synthetic Chromium UI — safe text, manual open, Escape/focus, responsive layout, merchant clicks, opening limit, stale results, error/missing-price states, cleanup.');
 } finally { await browser.close(); }

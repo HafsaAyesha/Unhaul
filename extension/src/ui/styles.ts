@@ -2,6 +2,7 @@ export const REFLECTION_STYLES = `
 :host { all: initial; position: fixed; left: 12px; top: 12px; z-index: 2147483000; pointer-events: none; color-scheme: light; }
 * { box-sizing: border-box; }
 .shell { font: 14px/1.5 system-ui, sans-serif; color: #193c32; }
+select { font: inherit; padding: 6px; margin: 6px; }
 button { font: inherit; border: 1px solid #507165; border-radius: 8px; padding: 8px 12px; cursor: pointer; background: #fff; color: #193c32; }
 button:focus-visible { outline: 3px solid #286ec1; outline-offset: 3px; }
 button:disabled { opacity: .65; cursor: not-allowed; }

@@ -1,13 +1,13 @@
 import { browser } from 'wxt/browser';
 // src/shared/messages.ts
-import type { Product, AnalysisResult } from './types';
+import type { Product, AnalysisResult, SaveResult } from './types';
 import { WAITS, type WaitKey } from './lists';
 import { isAnalysisResult } from './analysis-validation';
-import { record, isProduct, isNonemptyString } from './storage-validation';
+import { record, isProduct, isSavedItem, isNonemptyString } from './storage-validation';
 
 export type GetConsentMessage = { type: 'GET_CONSENT' };
 export type ConsentResponse = { consentGiven: boolean };
-export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED'; message: string };
+export type ProductOperationError = { type: 'ERROR'; code: 'INVALID_REQUEST' | 'CONSENT_REQUIRED' | 'NOT_IMPLEMENTED' | 'ANALYSIS_FAILED' | 'SAVE_FAILED'; message: string };
 export function isGetConsentMessage(value: unknown): value is GetConsentMessage {
   return record(value) && value.type === 'GET_CONSENT' && Object.keys(value).length === 1;
 }
@@ -31,7 +31,7 @@ export type Response =
   | AnalysisResult
   | { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean }
   | { type: 'OK' }
-  | { type: 'SAVE_RESULT'; result: 'saved' | 'already_saved'; deadline: number };
+  | SaveResult;
 
 // Reply map: gives each request its exact reply type.
 export interface ReplyFor {
@@ -41,7 +41,7 @@ export interface ReplyFor {
   REFINE_PRODUCT: AnalysisResult;
   CLAIM_PANEL_OPEN: { type: 'PANEL_OPEN_PERMISSION'; allowed: boolean };
   ADD_TO_CART_CLICKED: Extract<Response, { type: 'OK' }>;
-  SAVE_ITEM: Extract<Response, { type: 'SAVE_RESULT' }>;
+  SAVE_ITEM: SaveResult;
 }
 
 // Typed send helper for the content script and options page.
@@ -53,6 +53,9 @@ export async function send<T extends Request['type']>(
   if (record(reply) && reply.type === 'ERROR') throw new Error(typeof reply.message === 'string' ? reply.message : 'Product operation denied.');
   if ((req.type === 'PRODUCT_SEEN' || req.type === 'REFINE_PRODUCT') && !isAnalysisResult(reply)) throw new Error('Invalid analysis response.');
   if (req.type === 'CLAIM_PANEL_OPEN' && (!record(reply) || reply.type !== 'PANEL_OPEN_PERMISSION' || typeof reply.allowed !== 'boolean')) throw new Error('Invalid panel permission response.');
+  if (req.type === 'SAVE_ITEM' && (!record(reply) || reply.type !== 'SAVE_RESULT'
+    || !['saved', 'already_saved'].includes(String(reply.result)) || !isSavedItem(reply.record)
+    || reply.deadline !== (reply.record.reconsiderAt ?? reply.record.deadline))) throw new Error('Invalid save response.');
   return reply as ReplyFor[T];
 }
 

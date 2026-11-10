@@ -37,12 +37,13 @@ export interface OwnedItem {
 export type SavedStatus = 'waiting' | 'skipped' | 'purchased';
 
 export interface SavedItem {
-  id: string;                  // the productId, so a product is saved once
+  id: string;                  // unique save/decision record ID; legacy productId IDs remain valid
   product: Product;            // snapshot at save time
   classification?: Classification;
   wait: WaitKey;
   savedAt: number;
-  deadline: number;            // savedAt + WAITS[wait]
+  deadline: number;            // legacy-compatible absolute deadline
+  reconsiderAt?: number;       // new records write this equal to deadline
   status: SavedStatus;
   decidedAt?: number;
 }
@@ -84,4 +85,11 @@ export interface AnalysisResult {
   repeatVisit: boolean;
   phase: 'basic' | 'cached' | 'ai' | 'fallback';
   refinementAvailable: boolean;
+}
+
+export interface SaveResult {
+  type: 'SAVE_RESULT';
+  result: 'saved' | 'already_saved';
+  deadline: number;
+  record: SavedItem;
 }

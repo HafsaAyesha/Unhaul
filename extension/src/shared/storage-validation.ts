@@ -37,10 +37,11 @@ export function isProduct(value: unknown): value is Product {
     && (value.imageUrl === null || webURL(value.imageUrl));
 }
 export function isSavedItem(value: unknown): value is SavedItem {
-  return record(value) && text(value.id) && isProduct(value.product) && value.id === value.product.productId
+  return record(value) && text(value.id) && isProduct(value.product)
     && (value.classification === undefined || isClassification(value.classification))
     && inList(Object.keys(WAITS), value.wait) && time(value.savedAt) && time(value.deadline)
     && value.deadline >= value.savedAt
+    && (value.reconsiderAt === undefined || (time(value.reconsiderAt) && value.reconsiderAt === value.deadline))
     && inList(['waiting', 'skipped', 'purchased'], value.status)
     && (value.decidedAt === undefined || time(value.decidedAt));
 }

@@ -7,3 +7,8 @@ button:focus-visible { outline: 3px solid #246dbe; outline-offset: 3px; }
 button:disabled { cursor: wait; opacity: .65; }
 #error { color: #8b2424; margin-bottom: 12px; }
 #status { min-height: 1.6em; }
+
+.saved-card { padding: 14px 0; border-bottom: 1px solid #ccd6d0; overflow-wrap: anywhere; }
+.saved-card img { width: 64px; height: 64px; object-fit: contain; }
+.saved-card button { margin-right: 8px; }
+.saved-time { font-weight: 650; }

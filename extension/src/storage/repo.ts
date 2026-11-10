@@ -4,6 +4,10 @@ import { DEFAULT_SETTINGS, type Settings, type OwnedItem, type SavedItem, type V
 import { isSettings, isItems, isOwnedItem, isSavedItems, isVisits, isCache, isNonemptyString, requireValid } from '../shared/storage-validation';
 import { LEGACY_ITEMS_KEY, STORAGE_KEYS as K } from './keys';
 import { sampleItems } from './sample-items';
+import { WAITS, type WaitKey } from '../shared/lists';
+import { savedProductIdentity } from '../shared/cooling';
+import { isProduct } from '../shared/storage-validation';
+import type { Product, SaveResult } from '../shared/types';
 import { createConsentWork, currentConsentGeneration, invalidateConsentWork, isCurrentConsentWork, type ConsentWork } from '../consent/work';
 
 // Reads join the same queue so acknowledged writes/deletion are observed in order.
@@ -115,6 +119,51 @@ export function loadSampleItems(): Promise<number> {
 export function getSavedItems(): Promise<SavedItem[]> {
   return queued(() => read(K.saved, [], isSavedItems, 'saved items'));
 }
+/** Atomic save. Waiting/Ready duplicates retain their original snapshot and deadline. */
+export async function saveProduct(product: Product, wait: WaitKey): Promise<SaveResult> {
+  const generation = currentConsentGeneration();
+  const snapshot = structuredClone(product);
+  return queued(async () => {
+    requireValid(snapshot, isProduct, 'product snapshot');
+    if (!Object.hasOwn(WAITS, wait)) throw new Error('Invalid cooling-off duration.');
+    await requireConsent(generation);
+    const records = await read(K.saved, [], isSavedItems, 'saved items');
+    const identity = savedProductIdentity(snapshot);
+    const existing = records.find(item => item.status === 'waiting' && savedProductIdentity(item.product) === identity);
+    if (existing) {
+      assertCurrentWork(generation);
+      return { type: 'SAVE_RESULT', result: 'already_saved', deadline: existing.reconsiderAt ?? existing.deadline, record: existing };
+    }
+    const savedAt = Date.now();
+    const deadline = savedAt + WAITS[wait];
+    const item: SavedItem = { id: crypto.randomUUID(), product: snapshot, wait, savedAt, deadline, reconsiderAt: deadline, status: 'waiting' };
+    requireValid([item], isSavedItems, 'saved item');
+    await requireConsent(generation); assertCurrentWork(generation);
+    await write(K.saved, [...records, item]);
+    return { type: 'SAVE_RESULT', result: 'saved', deadline, record: item };
+  });
+}
+/** Decisions are immutable; resaving appends a new record, preserving history. */
+export function decideSavedItem(id: string, status: 'skipped' | 'purchased'): Promise<SavedItem> {
+  const generation = currentConsentGeneration();
+  return queued(async () => {
+    if (!id || !['skipped', 'purchased'].includes(status)) throw new Error('Invalid saved-item decision.');
+    await requireConsent(generation);
+    const records = await read(K.saved, [], isSavedItems, 'saved items');
+    const index = records.findIndex(item => item.id === id);
+    if (index < 0) throw new Error('Saved item no longer exists. Refresh the list.');
+    const existing = records[index];
+    if (existing.status !== 'waiting') {
+      if (existing.status === status) return existing;
+      throw new Error('This decision is already recorded. Save the product again to reconsider it.');
+    }
+    const updated: SavedItem = { ...existing, status, decidedAt: Date.now() };
+    requireValid([updated], isSavedItems, 'saved item');
+    await requireConsent(generation); assertCurrentWork(generation);
+    await write(K.saved, records.map((item, position) => position === index ? updated : item));
+    return updated;
+  });
+}
 /** Full-snapshot replacement, not an incremental merge. */
 export function setSavedItems(records: SavedItem[], work?: ConsentWork): Promise<void> {
   const generation = work?.generation ?? currentConsentGeneration();
@@ -179,7 +228,7 @@ export function deleteAllUnhaulData(): Promise<void> {
 }
 export const repo = {
   initializeStorage, getSettings, setConsent, getItems, addItem, deleteItem, loadSampleItems,
-  getSavedItems, setSavedItems, getVisits, setVisits,
+  getSavedItems, saveProduct, decideSavedItem, setSavedItems, getVisits, setVisits,
   getClassificationCache, setClassificationCache, deleteAllUnhaulData,
 };
 

@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser';
 import { createAnalysisService } from '../src/classify/analysis';
 import { isPingMessage, isGetConsentMessage, isProductRequest, type ConsentResponse, type ProductOperationError } from '../src/shared/messages';
-import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession } from '../src/storage/repo';
+import { initializeStorage, getSettings, beginConsentWork, claimPanelOpen, clearPanelSession, saveProduct } from '../src/storage/repo';
 import { invalidateConsentWork } from '../src/consent/work';
 import { STORAGE_KEYS } from '../src/storage/keys';
 import { isSettings } from '../src/shared/storage-validation';
@@ -75,6 +75,10 @@ export default defineBackground(() => {
       if (!isProductRequest(message)) {
         sendResponse({ type: 'ERROR', code: 'INVALID_REQUEST', message: 'Invalid product request.' } satisfies ProductOperationError);
         return;
+      }
+      if (message.type === 'SAVE_ITEM') {
+        void saveProduct(message.product, message.wait).then(sendResponse, error => sendResponse({ type: 'ERROR', code: 'SAVE_FAILED', message: error instanceof Error ? error.message : 'Could not save this item. Check consent and retry.' } satisfies ProductOperationError));
+        return true;
       }
       if (message.type === 'PRODUCT_SEEN' || message.type === 'REFINE_PRODUCT') {
         // Per document/frame sessions reject late variants/navigation replies.

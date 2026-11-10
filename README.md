@@ -6,7 +6,7 @@ stationery, home décor, toys, electronics, clothing and more.
 Development scaffold, not a completed MVP. Sample-item loading, deletion, keyword
 classification, matching and installation consent onboarding exist. Structured product
 reading and reflection UI are implemented for the existing Daraz scope; live store
-verification is pending. Saving/timers remain to be built. AI refinement is implemented but disabled until the proxy is configured and deployed.
+verification is pending. Saving and the cooling-off list are implemented with persisted absolute deadlines. AI refinement is implemented but disabled until the proxy is configured and deployed.
 Daraz Pakistan is the Phase 2 target. Production host access is restricted to
 `https://www.daraz.pk/*`, with content injection only on `/products/*`.
 The content script reads products and mounts a reflection badge/panel only after
@@ -106,8 +106,9 @@ the dismiss button, or Escape closes it. Merchant clicks/submits are not cancell
 or modified. The panel displays current structured title/price, explained matches
 and one rule-selected question. Missing price/currency is shown as unavailable.
 
-Save for later is visibly disabled with an explanation: Phase 8 is unfinished.
-No save confirmation, stock reservation, price guarantee or cart change is claimed.
+Save for later offers 24 hours, 3 days or 7 days. Success appears only after the
+background acknowledges persistence. It does not reserve stock, lock prices or
+change the merchant cart. Open extension options to view the cooling-off list.
 
 Automatic opening is limited once per product per actual tab session. Background
 storage.session markers survive document reloads and worker suspension, are shared
@@ -134,3 +135,25 @@ node scripts/reflection-smoke.mjs
 
 The harness injects fake analysis/claims into intercepted synthetic pages only. It
 is not an extension entrypoint and is not bundled in the production extension.
+
+## Cooling-off list (Phase 8)
+Use Save for later in the reflection panel, select 24 hours, 3 days or 7 days, and
+wait for the save confirmation. Options → Saved for later shows the saved snapshot,
+saved time, deadline and live remaining time/Ready. Skip and Purchased record your
+own decision; Purchased is not automatic purchase verification or an owned-item add.
+
+Active duplicates (including Ready items) are identified by store + product ID +
+variant ID and preserve their original snapshot/deadline. Saving a decided product
+again appends a new record with a fresh ID; its earlier decision stays in history.
+Legacy deadline-only records and product-ID record IDs are read without rewriting.
+New records store reconsiderAt and the compatibility deadline field identically.
+
+Ready is calculated from the absolute timestamp and the device clock whenever the
+view opens/focuses/becomes visible, and every second while visible. Clock changes
+can affect the displayed time; this is not tamper-proof timing. No alarms or browser
+notifications were added. Delete all data clears saved records and consent, and
+open lists react to changes without recreating deleted data.
+
+Automated persistence/module-reload checks and a synthetic ordinary-Chromium UI flow
+passed. Native extension save/restart acceptance remains unverified because the
+managed browser blocks extensions. No live merchant purchase or provider call ran.

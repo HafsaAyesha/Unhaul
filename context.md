@@ -111,7 +111,7 @@ These files are owned by B. After merge, **adding an optional field is fine; ren
 - Categories: stationery, home_decor, toys_games, electronics, clothing_accessories, other.
 - Purposes: writing, organizing, decoration, lighting, personal_audio, charging, play, wearing, carrying, other.
 - Item types: start from the brief's list, plus mug and paper_cutter. Add more only by updating lists.ts.
-- `types.ts`: Product (price and wasPrice are `number | null`), Classification, OwnedItem (source sample or manual), SavedItem (id = productId, status waiting, skipped or purchased; Ready is never stored), Visit, Settings (schemaVersion 1, consentGiven), Match.
+- `types.ts`: Product (price and wasPrice are `number | null`), Classification, OwnedItem (source sample or manual), SavedItem (unique save-record ID, stable store/product/variant identity for deduplication, absolute reconsiderAt and legacy-compatible deadline, status waiting/skipped/purchased; Ready is never stored), Visit, Settings (schemaVersion 1, consentGiven), Match.
 - `messages.ts`: PING to PONG; GET_CONSENT to {consentGiven: boolean}; PRODUCT_SEEN to MATCH_RESULT; ADD_TO_CART_CLICKED to OK; SAVE_ITEM to SAVE_RESULT (saved or already_saved, with deadline).
 - `examples.ts`: made-up example records for building and tests.
 - Storage keys (`src/storage/keys.ts`): unhaul:settings, unhaul:items, unhaul:saved, unhaul:visits, unhaul:classification-cache. These names follow the explicit storage tasks.
@@ -187,3 +187,4 @@ Judge install: download the ZIP from the Release, unzip, chrome://extensions, De
 | 2026-11-10 | Ten fictional samples use sample-01 through sample-10; add cap to the existing taxonomy | Requested Phase 5; two samples per category, preserve loader and user data; fixture alignment remains pending |
 | 2026-11-10 | Phase 6 uses optional gpt-4o-mini vision via Worker, immediate basic plus separate refinement, versioned AI-only cache | Official modality verified; live credentials/deployment unavailable. Purpose conflicts excluded; UI/product-reader integration remains separate |
 | 2026-11-10 | Phase 7 connects structured Daraz metadata to a consent-bound reflection UI; automatic opening markers use background storage.session per tab/product | Reader was empty; no extra stores or permissions added. Saving is explicitly disabled until Phase 8; synthetic browser verification only |
+| 2026-11-10 | Phase 8 stores absolute reconsiderAt/deadline, deduplicates active store/product/variant saves, and preserves decided history on resave | User requested cooling-off flow; Skip/Purchased are self-reported and immutable. Native Chrome restart still needs independent verification |

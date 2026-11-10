@@ -1,5 +1,6 @@
 import type { ConsentScope } from '../consent/lifecycle';
-import type { AnalysisResult, Product } from '../shared/types';
+import type { AnalysisResult, Product, SaveResult } from '../shared/types';
+import type { WaitKey } from '../shared/lists';
 import { extractProduct } from '../store/extract';
 import { createBadge, updateBadge } from './badge';
 import { createPanel } from './panel';
@@ -8,6 +9,7 @@ interface Dependencies {
   scope: ConsentScope;
   analyze(product: Product, publish: (analysis: AnalysisResult) => void, signal: AbortSignal): Promise<void>;
   cancelAnalysis(): void;
+  saveProduct?(product: Product, wait: WaitKey): Promise<SaveResult>;
   claimAutoOpen(productId: string): Promise<boolean>;
   document?: Document;
   readProduct?: () => Product | null;
@@ -50,7 +52,7 @@ export function mountReflectionExperience(deps: Dependencies) {
     panel.element.hidden = false; badge?.setAttribute('aria-expanded', 'true'); panel.closeButton.focus({ preventScroll: true });
   }
   function removeView(): void {
-    host?.remove(); host = undefined; root = undefined; panel = undefined; badge = undefined;
+    panel?.dispose(); host?.remove(); host = undefined; root = undefined; panel = undefined; badge = undefined;
   }
   function ensureView(): void {
     if (!active()) return;
@@ -61,7 +63,7 @@ export function mountReflectionExperience(deps: Dependencies) {
     const shell = doc.createElement('div'); shell.className = 'shell';
     badge = createBadge(); badge.setAttribute('aria-expanded', 'false');
     badge.addEventListener('click', open);
-    panel = createPanel(close);
+    panel = createPanel(close, deps.saveProduct);
     shell.append(badge, panel.element); root.append(style, shell);
     doc.body?.append(host);
   }

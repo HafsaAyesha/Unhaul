@@ -1,14 +1,16 @@
 import type { Settings, OwnedItem, SavedItem, VisitRecord, ClassificationCache } from './types';
-import { record, isSettings, isItems, isOwnedItem, isSavedItems, isVisits, isCache, isNonemptyString } from './storage-validation';
+import { record, isSettings, isItems, isOwnedItem, isSavedItems, isSavedItem, isVisits, isCache, isNonemptyString } from './storage-validation';
 export interface StorageArguments {
   initializeStorage: []; getSettings: []; setConsent: [boolean];
   getItems: []; addItem: [OwnedItem]; deleteItem: [string]; loadSampleItems: [];
+  decideSavedItem: [string, 'skipped' | 'purchased'];
   getSavedItems: []; setSavedItems: [SavedItem[]]; getVisits: []; setVisits: [VisitRecord[]];
   getClassificationCache: []; setClassificationCache: [ClassificationCache]; deleteAllUnhaulData: [];
 }
 export interface StorageResults {
   initializeStorage: null; getSettings: Settings; setConsent: null;
   getItems: OwnedItem[]; addItem: null; deleteItem: null; loadSampleItems: number;
+  decideSavedItem: SavedItem;
   getSavedItems: SavedItem[]; setSavedItems: null; getVisits: VisitRecord[]; setVisits: null;
   getClassificationCache: ClassificationCache; setClassificationCache: null; deleteAllUnhaulData: null;
 }
@@ -24,6 +26,7 @@ export function isStorageRequest(value: unknown): value is StorageRequest {
   if (!record(value) || value.type !== 'STORAGE' || typeof value.operation !== 'string' || !Array.isArray(value.args)) return false;
   const args: unknown[] = value.args;
   if (noArguments.has(value.operation)) return args.length === 0;
+  if (value.operation === 'decideSavedItem') return args.length === 2 && isNonemptyString(args[0]) && (args[1] === 'skipped' || args[1] === 'purchased');
   if (args.length !== 1) return false;
   switch (value.operation) {
     case 'setConsent': return typeof args[0] === 'boolean';
@@ -44,6 +47,7 @@ export function isStorageResponse<K extends StorageOperation>(operation: K, valu
     case 'getSettings': return isSettings(value.value);
     case 'getItems': return isItems(value.value);
     case 'getSavedItems': return isSavedItems(value.value);
+    case 'decideSavedItem': return isSavedItem(value.value);
     case 'getVisits': return isVisits(value.value);
     case 'getClassificationCache': return isCache(value.value);
     case 'loadSampleItems': return typeof value.value === 'number' && Number.isSafeInteger(value.value) && value.value >= 0;

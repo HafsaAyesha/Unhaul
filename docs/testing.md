@@ -142,3 +142,22 @@ No end-to-end readiness or AI accuracy claim is made by this scaffold.
 - Save for later remains disabled with explicit unavailable text; the Phase 8
   cooling-off API/UI is not present. There is no fake save success.
 - Phase 6 AI remains unconfigured/unverified as documented; no deployment occurred.
+
+## Phase 8 — 10 November 2026
+- Added three compact storage cases; full suite passed once: 9 files / 97 tests,
+  zero failures/skips (~1.4 s). Typecheck and production build passed.
+- Checks include each exact duration, Ready boundary/clamping, persistence across a
+  repository module reload, absent price/image, concurrent saves, duplicate deadline
+  preservation, variant/store/product identity, decisions/resave history, legacy
+  record compatibility, revoked saves/decisions and deletion invalidation.
+- Extended synthetic Chromium smoke passed: pending save disables controls, no early
+  success, failed save retains duration and permits retry, exact acknowledged success,
+  saved-list missing fields/links, Ready, Skip history, list clearing and cleanup.
+- The shared test document closes the floating merchant panel before testing the list;
+  production shows that list in a separate options page. Synthetic storage/decision
+  responses are mocks, not evidence of native Chrome extension storage or restart.
+- Native save→Chrome close/restart→Ready/delete verification remains UNRUN: the managed
+  Chromium extension blocklist prevents installation. Automated module reload is not
+  a substitute for a real Chrome restart. No live order or AI request was made.
+- Decisions implemented; notifications, alarms, budgets and automatic purchase/owned
+  item integration remain deferred. Time calculations use the device clock.

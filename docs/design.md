@@ -184,3 +184,30 @@ visit recording. UI error/loading states do not invent counts. Save remains disa
 with explicit text because the cooling-off API/UI is not implemented. No success
 message is shown. Product images are optional public URLs with no-referrer policy;
 owned-item names/reasons remain text inside the closed shadow root.
+
+## Phase 8 cooling-off implementation
+SAVE_ITEM validates the product and wait key, then calls background saveProduct.
+Read/validation/duplicate detection/write are one queued operation, with current
+consent and generation checks at commit. Responses include the persisted record.
+The content scope guards new requests; panel revisions discard UI acknowledgements
+for an old product or removed panel. Persistence success is never shown early.
+
+Saved records use a per-save UUID, a complete product snapshot, savedAt,
+reconsiderAt and compatibility deadline, wait and status. Stable identity is separate:
+store + productId + variantId. Waiting/Ready duplicates return already_saved and the
+original record/deadline without a write. Decided records are immutable; resave appends
+a new record and retains decision history. Skip/Purchased are serialized mutations
+with decidedAt; same decisions are idempotent and conflicting edits are rejected.
+
+Legacy records with a productId record ID or only deadline remain valid. No automatic
+rewriting or deletion occurs. New reconsiderAt must equal deadline; malformed or
+unsupported records produce a retryable read error rather than a fabricated Ready.
+Full-snapshot setters remain internal compatibility APIs; the UI uses atomic actions.
+
+The options saved-list module loads only after consent, reads through the typed
+client, renders safe HTTP(S) links/text/images, separates active and history cards,
+and refreshes on storage changes/focus/visibility. Only a visible-page interval
+updates labels; absolute timestamps are authoritative and independent of worker
+lifetime. Disposal clears timers/listeners and stale read generations; deletion or
+consent removal immediately clears/hides records. Missing fields are unavailable,
+not guessed. No notification, budget, analytics or automatic purchase feature added.
