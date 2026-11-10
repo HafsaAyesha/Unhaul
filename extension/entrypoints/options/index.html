@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Unhaul</title><meta name="manifest.open_in_tab" content="true"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="manifest.open_in_tab" content="true"><title>Unhaul</title></head>
 <body><main>
 <h1>Unhaul</h1><p>A pause before your next impulse purchase.</p>
 <p id="status" role="status" aria-live="polite">Loading your settings…</p>
@@ -11,29 +11,53 @@
   <p>With your agreement, Unhaul observes product pages and Add-to-cart interactions on these supported stores only: Daraz, Stationers.pk, The Stationery Company, Zubaida's, Rung, The School Store, Saleemi Book Depot, Toy Company, Toynix, Odeez, Baby Bazar, Chase Value, Design Your Own, Blingspot, SOZ, Nishat Linen, Bonanza Satrangi, Cross Stitch, Junaid Jamshed, Outfitters and Zellbury, to help you reconsider purchases. An interaction is not proof of a purchase.</p>
   <p>Your items, product visits, and saved list stay in this browser.</p>
   <p>When AI classification is enabled, the public product title, category text and image are sent through our classification service to an AI provider. Your owned items, visit history, and saved list are not included.</p>
-  <p id="ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
+  <p id="consent-ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
   <p>Unhaul does not read payment details or block checkout.</p>
   <button id="agree">Agree and enable Unhaul</button>
   <button id="not-now">Not now</button>
 </section>
 <div id="app" hidden>
-  <section aria-labelledby="dashboard-title"><h2 id="dashboard-title">Your dashboard</h2><div id="dashboard"></div></section>
-  <section aria-labelledby="items-title"><h2 id="items-title" tabindex="-1">My Items</h2>
-    <p>Things you already own. Unhaul compares new products against this list.</p>
-    <form id="quick-add" aria-labelledby="quick-add-title">
-      <h3 id="quick-add-title">Add an item you own</h3>
-      <label>Name <input id="qa-name" name="name" required maxlength="80" autocomplete="off" placeholder="e.g. Blue ceramic mug"></label>
-      <label>Category <select id="qa-category" name="category" required></select></label>
-      <label>Item type <select id="qa-type" name="itemType" required></select></label>
-      <label>Purpose (optional) <select id="qa-purpose" name="purpose"></select></label>
-      <label>Notes (optional) <textarea id="qa-notes" name="notes" maxlength="200" rows="2"></textarea></label>
-      <button type="submit" id="qa-submit">Add item</button>
-    </form>
-    <button id="load-sample">Load sample items</button>
-    <p id="items-empty" hidden>No items yet. Add one above or load the sample items.</p>
-    <ul id="items"></ul></section>
-  <section aria-labelledby="saved-title"><h2 id="saved-title">Saved for later</h2><div id="saved-list"></div></section>
-  <button id="turn-off">Turn off Unhaul</button>
-  <button id="delete-data">Delete all Unhaul data</button>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="wordmark" href="#home">Unhaul</a>
+      <nav aria-label="Main navigation">
+        <button type="button" data-nav="home">Home</button>
+        <button type="button" data-nav="items">My Items</button>
+        <button type="button" data-nav="saved">Saved for later</button>
+        <button type="button" data-nav="dashboard">Dashboard</button>
+        <button type="button" data-nav="settings">Settings</button>
+      </nav>
+    </aside>
+    <div class="app-content">
+      <section data-view="home" aria-labelledby="home-title"><h2 id="home-title" tabindex="-1">Your journey</h2><div id="home-content"></div></section>
+      <section data-view="items" aria-labelledby="items-title" hidden><h2 id="items-title" tabindex="-1">My Items</h2>
+        <p>Things you already own. Unhaul compares new products against this list.</p>
+        <form id="quick-add" aria-labelledby="quick-add-title">
+          <h3 id="quick-add-title">Add an item you own</h3>
+          <label>Name <input id="qa-name" name="name" required maxlength="80" autocomplete="off" placeholder="e.g. Blue ceramic mug"></label>
+          <label>Category <select id="qa-category" name="category" required></select></label>
+          <label>Item type <select id="qa-type" name="itemType" required></select></label>
+          <label>Purpose (optional) <select id="qa-purpose" name="purpose"></select></label>
+          <label>Notes (optional) <textarea id="qa-notes" name="notes" maxlength="200" rows="2"></textarea></label>
+          <button type="submit" id="qa-submit">Add item</button>
+        </form>
+        <button id="load-sample">Load sample items</button>
+        <p id="items-empty" hidden>No items yet. Add one above or load the sample items.</p>
+        <ul id="items"></ul>
+      </section>
+      <section data-view="saved" aria-labelledby="saved-title" hidden><h2 id="saved-title" tabindex="-1">Saved for later</h2><div id="saved-list"></div></section>
+      <section data-view="dashboard" aria-labelledby="dashboard-title" hidden><h2 id="dashboard-title" tabindex="-1">Your dashboard</h2><div id="dashboard"></div></section>
+      <section data-view="settings" aria-labelledby="settings-title" hidden>
+        <h2 id="settings-title" tabindex="-1">Settings</h2>
+        <p id="settings-consent">Unhaul is enabled.</p>
+        <p id="ai-state">AI classification is not configured in this build. No product information is currently sent for AI classification.</p>
+        <p>What leaves your browser: when AI classification is enabled, only the public product title, category text and image are sent through our classification service to an AI provider. Your owned items, visit history, and saved list are not included.</p>
+        <h3>Supported stores</h3><p id="settings-stores"></p>
+        <button id="turn-off">Turn off Unhaul</button>
+        <div class="danger-zone"><h3>Danger zone</h3><p>Delete all local Unhaul data, including your items and saved list.</p><button id="delete-data">Delete all Unhaul data</button><div id="delete-confirm" hidden><p>Are you sure? This cannot be undone.</p><button id="delete-data-confirm">Delete all Unhaul data</button><button id="delete-cancel">Cancel</button></div></div>
+        <p id="version"></p>
+      </section>
+    </div>
+  </div>
 </div>
 </main><script type="module" src="./main.ts"></script></body></html>

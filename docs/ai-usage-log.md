@@ -95,3 +95,4 @@ no hits. The team reviewed and merged the pull requests.
 ## Dashboard — 2026-11-10
 Copilot generated the read-only options dashboard and focused aggregation tests; typecheck, unit tests and build were run.
 Copilot was used to polish the reflection panel and badge styling; existing UI tests and extension checks were rerun.
+Copilot was used to build the tab-based options app shell, hash router, Home journey and Settings view; typecheck, tests and production manifest checks were run.
