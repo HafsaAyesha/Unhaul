@@ -72,3 +72,11 @@ Phase 8 push required merging concurrent main changes. Kept incoming fixtures/he
 files, preserved exact incompatible draft sources in docs/merge-preservation, and
 retained the tested active consent/storage contracts without notification permissions.
 Revalidated the merged active code; no history rewrite or source archive loss.
+
+## Phase 7 UI gap review — 2026-11-10
+AI assistance updated panel price formatting/missing-price suppression, keyword-only
+Basic matching label and singular/plural badge wording. Added one DOM panel test
+using existing Playwright infrastructure. Merchant interactions and shared contracts
+are unchanged by this task.
+Validation: npx tsc --noEmit, requested reflection.test.ts (2 tests, one new)
+and production build passed. Full suite and live merchant checks were not run.

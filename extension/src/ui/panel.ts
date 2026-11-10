@@ -26,6 +26,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   image.addEventListener('error', () => { image.hidden = true; });
   const state = document.createElement('p'); state.setAttribute('role', 'status');
   const matches = document.createElement('ul');
+  const basicLabel = document.createElement('p'); basicLabel.className = 'muted'; basicLabel.textContent = 'Basic matching'; basicLabel.hidden = true;
   const question = document.createElement('p'); question.className = 'question';
   const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save for later'; save.disabled = !saveProduct; save.setAttribute('aria-describedby', 'unhaul-save-note');
   const durationLabel = document.createElement('label'); durationLabel.textContent = 'Reconsider after '; durationLabel.htmlFor = 'unhaul-duration';
@@ -59,7 +60,7 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
   });
   const continueButton = document.createElement('button'); continueButton.type = 'button'; continueButton.textContent = 'Continue shopping'; continueButton.addEventListener('click', onClose);
   const cartNote = document.createElement('p'); cartNote.className = 'muted'; cartNote.textContent = 'Unhaul does not change the store’s cart, reserve stock or lock prices.';
-  panel.append(header, title, price, image, state, matches, question, durationLabel, save, continueButton, saveNote, cartNote);
+  panel.append(header, title, price, image, state, matches, basicLabel, question, durationLabel, save, continueButton, saveNote, cartNote);
   return {
     element: panel, closeButton: close,
     dispose() { disposed = true; revision++; },
@@ -71,10 +72,11 @@ export function createPanel(onClose: () => void, saveProduct?: (product: Product
         if (saveProduct) saveNote.textContent = '';
       }
       title.textContent = product.title;
-      if (product.price !== null && product.currency) {
-        try { price.textContent = new Intl.NumberFormat('en-PK', { style: 'currency', currency: product.currency }).format(product.price); }
-        catch { price.textContent = `${product.currency} ${product.price}`; }
-      } else price.textContent = 'Price unavailable';
+      price.hidden = product.price === null || !product.currency;
+      price.textContent = price.hidden ? '' : `${product.currency} ${new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: 20,
+      }).format(product.price!)}`;
+      basicLabel.hidden = analysis?.classification.source !== 'keywords';
       if (product.imageUrl) {
         // Reader validates URLs; still check before assigning a resource attribute.
         try {
