@@ -91,11 +91,20 @@ export function createHome(root: HTMLElement, client: HomeClient, onNavigate: (v
   const render = (settings: Settings, items: OwnedItem[], saved: SavedItem[]): void => {
     const doc = root.ownerDocument;
     root.replaceChildren();
-    const greeting = doc.createElement('p'); greeting.textContent = 'Welcome back.';
-    const promise = doc.createElement('p'); promise.textContent = 'A pause before your next impulse purchase.';
+    const hero = doc.createElement('div'); hero.className = 'home-hero';
+    const greeting = doc.createElement('p'); greeting.className = 'home-eyebrow'; greeting.textContent = 'YOUR UNHAUL JOURNEY';
+    const promise = doc.createElement('p'); promise.className = 'home-promise'; promise.textContent = 'A pause before your next impulse purchase.';
+    const intro = doc.createElement('p'); intro.className = 'home-intro'; intro.textContent = 'Build a small, thoughtful shopping habit—one decision at a time.';
+    hero.append(greeting, promise, intro);
     const steps = journeySteps(settings, items, saved);
-    const progress = doc.createElement('p'); progress.className = 'progress';
-    progress.textContent = `${steps.filter(step => step.done).length} of ${steps.length} done`;
+    const complete = steps.filter(step => step.done).length;
+    const progressHeader = doc.createElement('div'); progressHeader.className = 'journey-header';
+    const progressTitle = doc.createElement('h3'); progressTitle.textContent = 'Your journey';
+    const progress = doc.createElement('p'); progress.className = 'progress'; progress.textContent = `${complete} of ${steps.length} done`;
+    progressHeader.append(progressTitle, progress);
+    const progressTrack = doc.createElement('div'); progressTrack.className = 'progress-track';
+    const progressBar = doc.createElement('div'); progressBar.className = 'progress-bar'; progressBar.style.width = `${(complete / steps.length) * 100}%`;
+    progressTrack.append(progressBar);
     const checklist = doc.createElement('ol'); checklist.className = 'journey-list';
     for (const step of steps) {
       const row = doc.createElement('li'); row.className = step.done ? 'done' : '';
@@ -119,9 +128,13 @@ export function createHome(root: HTMLElement, client: HomeClient, onNavigate: (v
     } else if (next?.id === 'decision') {
       const button = doc.createElement('button'); button.type = 'button'; button.textContent = 'View saved items'; button.addEventListener('click', () => onNavigate('saved')); nextCard.append(button);
     }
-    root.append(greeting, promise, progress, checklist, nextCard);
+    const journey = doc.createElement('section'); journey.className = 'journey-panel';
+    journey.append(progressHeader, progressTrack, checklist, nextCard);
+    root.append(hero, journey);
 
     const summary = doc.createElement('div'); summary.className = 'summary-tiles';
+    const summaryHeading = doc.createElement('h3'); summaryHeading.className = 'summary-heading'; summaryHeading.textContent = 'At a glance';
+    root.append(summaryHeading);
     const counts = homeSummary(saved);
     for (const [label, value] of [['Waiting', String(counts.waiting)], ['Ready to decide', String(counts.ready)], ['Skipped', String(counts.skipped)]] as const) {
       const tile = doc.createElement('div'); tile.className = 'summary-tile'; const heading = doc.createElement('strong'); heading.textContent = value; const text = doc.createElement('span'); text.textContent = label; tile.append(heading, text); summary.append(tile);
@@ -131,7 +144,7 @@ export function createHome(root: HTMLElement, client: HomeClient, onNavigate: (v
     for (const [currency, value] of Object.entries(counts.notSpent)) { const line = doc.createElement('strong'); line.textContent = formatPrice(value, currency); moneyTile.append(line); }
     if (!Object.keys(counts.notSpent).length) { const line = doc.createElement('strong'); line.textContent = '—'; moneyTile.append(line); }
     summary.append(moneyTile); root.append(summary);
-    const stores = doc.createElement('p'); stores.className = 'muted'; stores.textContent = `Supported stores: ${SUPPORTED_STORE_NAMES.join(', ')}`; root.append(stores);
+    const stores = doc.createElement('p'); stores.className = 'stores-note'; stores.textContent = `Supported stores: ${SUPPORTED_STORE_NAMES.join(', ')}`; root.append(stores);
   };
   return {
     refresh,
